@@ -10,8 +10,38 @@
     "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/deca%20joins%20%E5%81%8F%E8%A7%81.mp3"
   },
   {
+    "id": "EVERYTHING",
+    "title": "EVERYTHING",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/EVERYTHING.mp3"
+  },
+  {
     "id": "Sunset Rollercoaster - Humor Tumor",
     "title": "Sunset Rollercoaster - Humor Tumor",
     "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Sunset%20Rollercoaster%20-%20Humor%20Tumor.mp3"
+  },
+  {
+    "id": "Sunset Rollercoaster 落日飛車 腦海中",
+    "title": "Sunset Rollercoaster 落日飛車 腦海中",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Sunset%20Rollercoaster%20%E8%90%BD%E6%97%A5%E9%A3%9B%E8%BB%8A%20%E8%85%A6%E6%B5%B7%E4%B8%AD.mp3"
+  },
+  {
+    "id": "Twenty Three",
+    "title": "Twenty Three",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Twenty%20Three.mp3"
+  },
+  {
+    "id": "Whyte _te x TENDRE  - Let Me Be Me (Official Video)",
+    "title": "Whyte _te x TENDRE  - Let Me Be Me (Official Video)",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Whyte%20_te%20x%20TENDRE%20%20-%20Let%20Me%20Be%20Me%20(Official%20Video).mp3"
+  },
+  {
+    "id": "太聰明",
+    "title": "太聰明",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/%E5%A4%AA%E8%81%B0%E6%98%8E.mp3"
+  },
+  {
+    "id": "我在紐約打電話給你",
+    "title": "我在紐約打電話給你",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/%E6%88%91%E5%9C%A8%E7%B4%90%E7%B4%84%E6%89%93%E9%9B%BB%E8%A9%B1%E7%B5%A6%E4%BD%A0.mp3"
   }
 ]
