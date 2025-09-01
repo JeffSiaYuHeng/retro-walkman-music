@@ -1,6 +1,7 @@
 // generate-songs-json.js
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
+
 
 // Repo details
 const repo = "JeffSiaYuHeng/retro-walkman-music";
