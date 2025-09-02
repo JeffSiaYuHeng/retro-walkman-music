@@ -1,42 +1,272 @@
 [
   {
     "id": "Air Supply - Lost In Love",
-    "title": "Air Supply - Lost In Love",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Air%20Supply%20-%20Lost%20In%20Love.mp3"
+    "title": "Lost In Love",
+    "artist": "Air Supply",
+    "album": "Lost in Love",
+    "duration": 234,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Air%20Supply%20-%20Lost%20In%20Love.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Air%20Supply%20-%20Lost%20In%20Love.mp3",
+    "addedAt": 1756792575936
   },
   {
     "id": "Billy Joel - Honesty",
-    "title": "Billy Joel - Honesty",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Honesty.mp3"
+    "title": "Honesty",
+    "artist": "Billy Joel",
+    "album": "52nd Street",
+    "duration": 231,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Honesty.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Honesty.mp3",
+    "addedAt": 1756792575937
   },
   {
     "id": "Billy Joel - Just the Way You Are",
-    "title": "Billy Joel - Just the Way You Are",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Just%20the%20Way%20You%20Are.mp3"
+    "title": "Just the Way You Are",
+    "artist": "Billy Joel",
+    "album": "The Stranger (Legacy Edition)",
+    "duration": 291,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Just%20the%20Way%20You%20Are.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Just%20the%20Way%20You%20Are.mp3",
+    "addedAt": 1756792575938
   },
   {
     "id": "Billy Joel - Long, Long Time - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
-    "title": "Billy Joel - Long, Long Time - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Long%2C%20Long%20Time%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.mp3"
+    "title": "Long, Long Time - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
+    "artist": "Billy Joel",
+    "album": "Piano Man (Legacy Edition)",
+    "duration": 287,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Long%2C%20Long%20Time%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Long%2C%20Long%20Time%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.mp3",
+    "addedAt": 1756792575939
   },
   {
     "id": "Billy Joel - My Life",
-    "title": "Billy Joel - My Life",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20My%20Life.mp3"
+    "title": "My Life",
+    "artist": "Billy Joel",
+    "album": "52nd Street",
+    "duration": 284,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20My%20Life.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20My%20Life.mp3",
+    "addedAt": 1756792575940
   },
   {
     "id": "Billy Joel - Nocturne - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
-    "title": "Billy Joel - Nocturne - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Nocturne%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.mp3"
+    "title": "Nocturne - Live April 1972 At Sigma Sound Studios, WMMR Radio, Philadelphia, PA",
+    "artist": "Billy Joel",
+    "album": "Piano Man (Legacy Edition)",
+    "duration": 166,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Nocturne%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Nocturne%20-%20Live%20April%201972%20At%20Sigma%20Sound%20Studios%2C%20WMMR%20Radio%2C%20Philadelphia%2C%20PA.mp3",
+    "addedAt": 1756792575941
+  },
+  {
+    "id": "Billy Joel - Uptown Girl",
+    "title": "Uptown Girl",
+    "artist": "Billy Joel",
+    "album": "An Innocent Man",
+    "duration": 198,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Uptown%20Girl.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Billy%20Joel%20-%20Uptown%20Girl.mp3",
+    "addedAt": 1756792575942
+  },
+  {
+    "id": "Bob Dylan - Blowin' in the Wind",
+    "title": "Blowin' in the Wind",
+    "artist": "Bob Dylan",
+    "album": "The Freewheelin' Bob Dylan",
+    "duration": 165,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Blowin'%20in%20the%20Wind.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Blowin'%20in%20the%20Wind.mp3",
+    "addedAt": 1756792575943
+  },
+  {
+    "id": "Bob Dylan - Shelter from the Storm",
+    "title": "Shelter from the Storm",
+    "artist": "Bob Dylan",
+    "album": "Blood On The Tracks",
+    "duration": 301,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Shelter%20from%20the%20Storm.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Shelter%20from%20the%20Storm.mp3",
+    "addedAt": 1756792575944
+  },
+  {
+    "id": "Bob Dylan - Tangled up in Blue",
+    "title": "Tangled up in Blue",
+    "artist": "Bob Dylan",
+    "album": "Blood On The Tracks",
+    "duration": 342,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Tangled%20up%20in%20Blue.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Tangled%20up%20in%20Blue.mp3",
+    "addedAt": 1756792575945
+  },
+  {
+    "id": "Bob Dylan - Why Was I Born",
+    "title": "Why Was I Born",
+    "artist": "Bob Dylan",
+    "album": "Triplicate",
+    "duration": 170,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Why%20Was%20I%20Born.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bob%20Dylan%20-%20Why%20Was%20I%20Born.mp3",
+    "addedAt": 1756792575946
+  },
+  {
+    "id": "Bobby Caldwell - What You Won't Do for Love",
+    "title": "What You Won't Do for Love",
+    "artist": "Bobby Caldwell",
+    "album": "What You Won't Do for Love",
+    "duration": 287,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bobby%20Caldwell%20-%20What%20You%20Won't%20Do%20for%20Love.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Bobby%20Caldwell%20-%20What%20You%20Won't%20Do%20for%20Love.mp3",
+    "addedAt": 1756792575947
+  },
+  {
+    "id": "George Benson - Nothing's Gonna Change My Love for You",
+    "title": "Nothing's Gonna Change My Love for You",
+    "artist": "George Benson",
+    "album": "20/20",
+    "duration": 243,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/George%20Benson%20-%20Nothing's%20Gonna%20Change%20My%20Love%20for%20You.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/George%20Benson%20-%20Nothing's%20Gonna%20Change%20My%20Love%20for%20You.mp3",
+    "addedAt": 1756792575948
+  },
+  {
+    "id": "George Lam - Until We Meet Again",
+    "title": "Until We Meet Again",
+    "artist": "George Lam",
+    "album": "Until We Meet Again",
+    "duration": 266,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/George%20Lam%20-%20Until%20We%20Meet%20Again.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/George%20Lam%20-%20Until%20We%20Meet%20Again.mp3",
+    "addedAt": 1756792575949
+  },
+  {
+    "id": "Gilbert O'Sullivan - Alone Again (Naturally)",
+    "title": "Alone Again (Naturally)",
+    "artist": "Gilbert O'Sullivan",
+    "album": "Back to Front (Deluxe Edition)",
+    "duration": 221,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Gilbert%20O'Sullivan%20-%20Alone%20Again%20(Naturally).jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Gilbert%20O'Sullivan%20-%20Alone%20Again%20(Naturally).mp3",
+    "addedAt": 1756792575950
+  },
+  {
+    "id": "John Borleo - Pure Imagination",
+    "title": "Pure Imagination",
+    "artist": "John Borleo",
+    "album": "Pure Imagination",
+    "duration": 120,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Borleo%20-%20Pure%20Imagination.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Borleo%20-%20Pure%20Imagination.mp3",
+    "addedAt": 1756792575951
+  },
+  {
+    "id": "John Denver - Leaving, On a Jet Plane - 'Greatest Hits' Version",
+    "title": "Leaving, On a Jet Plane - \"Greatest Hits\" Version",
+    "artist": "John Denver",
+    "album": "John Denver's Greatest Hits",
+    "duration": 246,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Leaving%2C%20On%20a%20Jet%20Plane%20-%20'Greatest%20Hits'%20Version.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Leaving%2C%20On%20a%20Jet%20Plane%20-%20'Greatest%20Hits'%20Version.mp3",
+    "addedAt": 1756792575952
+  },
+  {
+    "id": "John Denver - Rocky Mountain High",
+    "title": "Rocky Mountain High",
+    "artist": "John Denver",
+    "album": "John Denver's Greatest Hits",
+    "duration": 284,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Rocky%20Mountain%20High.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Rocky%20Mountain%20High.mp3",
+    "addedAt": 1756792575953
+  },
+  {
+    "id": "John Denver - Sunshine On My Shoulders",
+    "title": "Sunshine On My Shoulders",
+    "artist": "John Denver",
+    "album": "Poems, Prayers and Promises",
+    "duration": 312,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Sunshine%20On%20My%20Shoulders.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Sunshine%20On%20My%20Shoulders.mp3",
+    "addedAt": 1756792575954
+  },
+  {
+    "id": "John Denver - Take Me Home, Country Roads - Original Version",
+    "title": "Take Me Home, Country Roads - Original Version",
+    "artist": "John Denver",
+    "album": "John Denver's Greatest Hits",
+    "duration": 193,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Take%20Me%20Home%2C%20Country%20Roads%20-%20Original%20Version.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/John%20Denver%20-%20Take%20Me%20Home%2C%20Country%20Roads%20-%20Original%20Version.mp3",
+    "addedAt": 1756792575955
+  },
+  {
+    "id": "Los Retros - Someone To Spend Time With",
+    "title": "Someone To Spend Time With",
+    "artist": "Los Retros",
+    "album": "Someone To Spend Time With",
+    "duration": 174,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Los%20Retros%20-%20Someone%20To%20Spend%20Time%20With.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Los%20Retros%20-%20Someone%20To%20Spend%20Time%20With.mp3",
+    "addedAt": 1756792575956
+  },
+  {
+    "id": "Louis Armstrong - Dream A Little Dream Of Me",
+    "title": "Dream A Little Dream Of Me",
+    "artist": "Louis Armstrong",
+    "album": "What A Wonderful World",
+    "duration": 197,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20Dream%20A%20Little%20Dream%20Of%20Me.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20Dream%20A%20Little%20Dream%20Of%20Me.mp3",
+    "addedAt": 1756792575957
+  },
+  {
+    "id": "Louis Armstrong - I'm In The Mood For Love - Single Version",
+    "title": "I'm In The Mood For Love - Single Version",
+    "artist": "Louis Armstrong",
+    "album": "Volume 1: Rhythm Saved The World (1935-1936)",
+    "duration": 190,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20I'm%20In%20The%20Mood%20For%20Love%20-%20Single%20Version.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20I'm%20In%20The%20Mood%20For%20Love%20-%20Single%20Version.mp3",
+    "addedAt": 1756792575958
+  },
+  {
+    "id": "Louis Armstrong - La vie en rose - Single Version",
+    "title": "La vie en rose - Single Version",
+    "artist": "Louis Armstrong",
+    "album": "The Best Of The Decca Years Volume One: The Singer",
+    "duration": 203,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20La%20vie%20en%20rose%20-%20Single%20Version.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20La%20vie%20en%20rose%20-%20Single%20Version.mp3",
+    "addedAt": 1756792575959
+  },
+  {
+    "id": "Louis Armstrong - What A Wonderful World",
+    "title": "What A Wonderful World",
+    "artist": "Louis Armstrong",
+    "album": "What A Wonderful World",
+    "duration": 139,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20What%20A%20Wonderful%20World.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/Louis%20Armstrong%20-%20What%20A%20Wonderful%20World.mp3",
+    "addedAt": 1756792575960
   },
   {
     "id": "The Beatles - Hey Jude",
-    "title": "The Beatles - Hey Jude",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Hey%20Jude.mp3"
+    "title": "Hey Jude",
+    "artist": "The Beatles",
+    "album": "Love",
+    "duration": 239,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Hey%20Jude.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Hey%20Jude.mp3",
+    "addedAt": 1756792575961
   },
   {
     "id": "The Beatles - Michelle - Remastered 2009",
-    "title": "The Beatles - Michelle - Remastered 2009",
-    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Michelle%20-%20Remastered%202009.mp3"
+    "title": "Michelle - Remastered 2009",
+    "artist": "The Beatles",
+    "album": "Rubber Soul (Remastered 2009)",
+    "duration": 162,
+    "coverUrl": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Michelle%20-%20Remastered%202009.jpg",
+    "src": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs/The%20Beatles%20-%20Michelle%20-%20Remastered%202009.mp3",
+    "addedAt": 1756792575962
   }
 ]
