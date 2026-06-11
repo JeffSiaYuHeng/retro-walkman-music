@@ -235,18 +235,20 @@ def embed_covers(filename: str = None):
             _embed_single(cover_path, mp3_path, mime)
 
 
-def _embed_single(cover_path: Path, mp3_path: Path, mime: str):
+def _embed_single(cover_path: Path, mp3_path: Path, mime: str, force: bool = False):
     """Embed a single cover image into an MP3 file."""
     try:
         from mutagen.mp3 import MP3
         from mutagen.id3 import ID3, APIC
 
         audio = MP3(str(mp3_path), ID3=ID3)
-        if audio.tags and any(isinstance(v, APIC) for v in audio.tags.values()):
+        if not force and audio.tags and any(isinstance(v, APIC) for v in audio.tags.values()):
             return  # already has cover
 
         if audio.tags is None:
             audio.add_tags()
+        else:
+            audio.tags.delall('APIC')
 
         with open(cover_path, 'rb') as img:
             audio.tags.add(APIC(encoding=3, mime=mime, type=3, cover=img.read()))
@@ -477,6 +479,161 @@ def check_duplicate():
     return jsonify({"duplicates": duplicates})
 
 
+def get_itunes_cover(title: str, artist: str = "") -> str | None:
+    """Search iTunes for album cover. Returns cover URL or None."""
+    try:
+        import urllib.request
+        import urllib.parse
+
+        query = f"{artist} {title}".strip() if artist else title
+        params = urllib.parse.urlencode({
+            "term": query,
+            "media": "music",
+            "limit": 5
+        })
+        url = f"https://itunes.apple.com/search?{params}"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        results = data.get("results", [])
+        if not results:
+            return None
+
+        for r in results:
+            art_url = r.get("artworkUrl100", "")
+            if art_url:
+                return art_url.replace("100x100", "600x600")
+
+        return None
+    except Exception as e:
+        print(f"[iTunes] Error: {e}")
+        return None
+
+
+def get_deezer_cover(title: str, artist: str = "") -> str | None:
+    """Search Deezer for album cover. Returns cover URL or None."""
+    try:
+        import urllib.request
+        import urllib.parse
+
+        query = f"{artist} {title}".strip() if artist else title
+        params = urllib.parse.urlencode({"q": query, "limit": 3})
+        url = f"https://api.deezer.com/search?{params}"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        for item in data.get("data", []):
+            album = item.get("album", {})
+            cover = album.get("cover_xl") or album.get("cover_big") or album.get("cover", "")
+            if cover:
+                return cover
+
+        return None
+    except Exception as e:
+        print(f"[Deezer] Error: {e}")
+        return None
+
+
+def get_musicbrainz_cover(title: str, artist: str = "") -> str | None:
+    """Search MusicBrainz + Cover Art Archive for album cover. Returns cover URL or None."""
+    try:
+        import urllib.request
+        import urllib.parse
+
+        query = f"{artist} {title}".strip() if artist else title
+        params = urllib.parse.urlencode({
+            "query": f"recording:{query}",
+            "fmt": "json",
+            "limit": 3
+        })
+        url = f"https://musicbrainz.org/ws/2/recording/?{params}"
+
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "RetroWalkmanMusic/1.0 (https://github.com/JeffSiaYuHeng/retro-walkman-music)",
+            "Accept": "application/json"
+        })
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        recordings = data.get("recordings", [])
+        for rec in recordings:
+            releases = rec.get("releases", [])
+            for release in releases:
+                release_id = release.get("id", "")
+                if not release_id:
+                    continue
+                cover_url = f"https://coverartarchive.org/release/{release_id}/front-500"
+                try:
+                    check_req = urllib.request.Request(cover_url, method="HEAD",
+                        headers={"User-Agent": "RetroWalkmanMusic/1.0"})
+                    with urllib.request.urlopen(check_req, timeout=3) as check:
+                        if check.status == 200:
+                            return cover_url
+                except Exception:
+                    continue
+
+        return None
+    except Exception as e:
+        print(f"[MusicBrainz] Error: {e}")
+        return None
+
+
+def get_album_cover(title: str, artist: str = "", youtube_thumb: str = "") -> str:
+    """Get album cover with fallback: iTunes -> Deezer -> MusicBrainz -> YouTube thumbnail."""
+    cover = get_itunes_cover(title, artist)
+    if cover:
+        print(f"[Cover] Found from iTunes: {title}")
+        return cover
+
+    cover = get_deezer_cover(title, artist)
+    if cover:
+        print(f"[Cover] Found from Deezer: {title}")
+        return cover
+
+    cover = get_musicbrainz_cover(title, artist)
+    if cover:
+        print(f"[Cover] Found from MusicBrainz: {title}")
+        return cover
+
+    if youtube_thumb:
+        print(f"[Cover] Using YouTube thumbnail: {title}")
+        return youtube_thumb
+
+    return ""
+
+
+def download_and_embed_cover(cover_url: str, mp3_filename: str) -> bool:
+    """Download cover image, save as .jpg, and embed into MP3. Returns True on success."""
+    try:
+        import urllib.request
+
+        mp3_path = SONGS_DIR / mp3_filename
+        if not mp3_path.exists():
+            print(f"[Cover] MP3 not found: {mp3_filename}")
+            return False
+
+        name = mp3_filename.replace('.mp3', '')
+        cover_path = SONGS_DIR / f"{name}.jpg"
+
+        req = urllib.request.Request(cover_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            img_data = resp.read()
+
+        with open(cover_path, 'wb') as f:
+            f.write(img_data)
+        print(f"[Cover] Saved: {cover_path.name}")
+
+        _embed_single(cover_path, mp3_path, 'image/jpeg', force=True)
+        return True
+    except Exception as e:
+        print(f"[Cover] Download/embed error: {e}")
+        return False
+
+
 @app.route("/api/enrich", methods=["POST"])
 def enrich_song():
     """Fetch artist/album info for a song using ytmusicapi."""
@@ -503,15 +660,23 @@ def enrich_song():
         album_name = album.get('name', '') if isinstance(album, dict) else ''
         duration = best.get('duration_seconds', 0)
         thumbnails = best.get('thumbnails', [])
-        thumb_url = thumbnails[-1].get('url', '') if thumbnails else ''
+        youtube_thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+
+        title = best.get('title', '')
+        artist = ', '.join(artists)
+        cover_url = get_album_cover(title, artist, youtube_thumb)
+
+        if cover_url:
+            download_and_embed_cover(cover_url, filename)
+            run_generate_json()
 
         return jsonify({
-            "title": best.get('title', ''),
+            "title": title,
             "artists": artists,
-            "artist": ', '.join(artists),
+            "artist": artist,
             "album": album_name,
             "duration": duration,
-            "thumbnail": thumb_url,
+            "thumbnail": cover_url,
             "videoId": best.get('videoId', ''),
         })
     except Exception as e:
@@ -590,6 +755,36 @@ def enrich_all():
         run_generate_json()
 
     return jsonify({"enriched": len(results), "results": results})
+
+
+@app.route("/api/update-covers", methods=["POST"])
+def update_covers():
+    """Batch update covers for all songs. Pass {"force": true} to replace existing covers."""
+    SONGS_DIR.mkdir(exist_ok=True)
+    data = request.get_json(silent=True) or {}
+    force = data.get("force", False)
+    files = [f for f in os.listdir(SONGS_DIR) if f.lower().endswith('.mp3')]
+    updated = []
+
+    for f in files:
+        name = f.replace('.mp3', '')
+        cover_path = SONGS_DIR / f"{name}.jpg"
+
+        if cover_path.exists() and not force:
+            continue
+
+        parts = name.split(' - ', 1)
+        artist = parts[0].strip() if len(parts) > 1 else ''
+        query = parts[1].strip() if len(parts) > 1 else name.strip()
+
+        cover_url = get_album_cover(query, artist)
+        if cover_url and download_and_embed_cover(cover_url, f):
+            updated.append(f)
+
+    if updated:
+        run_generate_json()
+
+    return jsonify({"updated": len(updated), "files": updated})
 
 
 @app.route("/api/rename", methods=["POST"])
