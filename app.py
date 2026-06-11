@@ -18,6 +18,7 @@ SONGS_DIR = BASE_DIR / "songs"
 GENERATE_SCRIPT = BASE_DIR / "generate-songs-json.js"
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
 # Thread-safe task store
 tasks = {}
@@ -49,6 +50,8 @@ def run_cmd(cmd: list[str], task_id: str, timeout: int = 120) -> int:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding='utf-8',
+        errors='replace',
         cwd=str(BASE_DIR),
     )
     try:
@@ -113,7 +116,6 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
         "--write-thumbnail",
         "--convert-thumbnails", "jpg",
         "--embed-thumbnail",
-        "--parse-metadata", "%(title)s:%(meta_title)s",
         "-o", tmp_tpl,
         "--no-playlist",
         "--print-json",
@@ -124,28 +126,34 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
 
     try:
         print(f"Running yt-dlp: {' '.join(cmd[:5])}...")
-        # Run and capture JSON output for metadata
+        # Run and capture raw bytes for proper UTF-8 handling
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+        env['PYTHONUTF8'] = '1'
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
             cwd=str(BASE_DIR),
+            env=env,
         )
+        raw_output = b""
+        for chunk in iter(lambda: process.stdout.read(4096), b""):
+            raw_output += chunk
+        process.wait()
+
+        # Decode as UTF-8
+        output_text = raw_output.decode('utf-8', errors='replace')
         json_output = ""
-        all_output = []
-        for line in process.stdout:
+        for line in output_text.split('\n'):
             line = line.strip()
             if line.startswith('{'):
                 json_output = line
             elif line:
-                all_output.append(line[:100])
                 update_task(task_id, message=line[:200])
-        process.wait()
 
         if process.returncode != 0:
             print(f"yt-dlp failed with return code {process.returncode}")
-            print(f"yt-dlp output: {all_output[:3]}")
             return False
 
         # Parse metadata and rename file
@@ -165,8 +173,9 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                 else:
                     clean_name = video_id
 
-                # Sanitize filename
-                clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name).strip()
+                # Sanitize filename - remove invalid chars but keep Unicode
+                # Remove characters that are invalid in Windows filenames
+                clean_name = re.sub(r'[<>:"/\\|*]', '', clean_name).strip()
                 if not clean_name:
                     clean_name = video_id
 
@@ -251,10 +260,6 @@ def run_download(task_id: str, query: str):
     try:
         _run_download_inner(task_id, query)
     except Exception as e:
-        import traceback
-        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
-            f.write(f"FATAL ERROR: {e}\n")
-            f.write(traceback.format_exc() + "\n")
         update_task(task_id, status="failed", message=str(e)[:200])
 
 
@@ -272,15 +277,10 @@ def _run_download_inner(task_id: str, query: str):
 
     try:
         SONGS_DIR.mkdir(exist_ok=True)
-        # Write debug to file
-        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
-            f.write(f"Starting download for: {query}\n")
 
         # Skip ytmdl (doesn't work without JS runtime on this system)
         # Go straight to yt-dlp
         success = try_ytdlp_fallback(query, input_type, task_id)
-        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
-            f.write(f"yt-dlp result: {success}\n")
 
         # Fallback: try ytmdl if yt-dlp failed
         if not success:
@@ -424,9 +424,6 @@ def download():
 
         thread = threading.Thread(target=run_download, args=(task_id, line), daemon=True)
         thread.start()
-        # Debug: write to file
-        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
-            f.write(f"Thread started for task {task_id}: {line}\n")
         results.append({"id": task_id, "song": line, "input_type": input_type})
 
     return jsonify(results if len(results) > 1 else results[0])
