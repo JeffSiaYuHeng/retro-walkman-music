@@ -83,6 +83,23 @@
   }
   .global-nav .nav-link:hover{color:var(--body-on-dark)}
 
+  .nav-hamburger{
+    display:none;
+    background:none;border:none;cursor:pointer;
+    padding:4px;flex-direction:column;gap:5px;
+    justify-content:center;align-items:center;
+    width:44px;height:44px;
+  }
+  .nav-hamburger span{
+    display:block;width:20px;height:2px;
+    background:var(--body-on-dark);
+    border-radius:1px;
+    transition:transform .25s, opacity .25s;
+  }
+  .nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .nav-hamburger.open span:nth-child(2){opacity:0}
+  .nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
   /* ── Sub Nav ───────────────────────────── */
   .sub-nav{
     position:sticky;top:44px;z-index:99;
@@ -749,12 +766,26 @@
   }
 
   /* ── Responsive ────────────────────────── */
-  @media(max-width:833px){
-    .global-nav .nav-links{display:none}
-    .hero-headline{font-size:40px}
-    .hero-tagline{font-size:21px}
-    .tile{padding:48px 20px}
-    .song-grid{grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:12px}
+  @media(max-width:900px){
+    .global-nav .nav-links{
+      display:none;
+      position:absolute;top:44px;left:0;right:0;
+      background:var(--surface-black);
+      flex-direction:column;
+      padding:8px 0;
+      border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .global-nav .nav-links.show{display:flex}
+    .global-nav .nav-link{
+      width:100%;text-align:left;
+      padding:12px 24px;font-size:14px;
+    }
+    .nav-hamburger{display:flex}
+    .global-nav{position:sticky}
+    .hero-headline{font-size:42px}
+    .hero-tagline{font-size:22px}
+    .tile{padding:56px 20px}
+    .song-grid{grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));gap:14px}
     .input-row{flex-direction:column}
     .input-row textarea{border-radius:14px}
     .input-row .btn-pill-sm{width:100%;border-radius:14px}
@@ -762,13 +793,41 @@
   @media(max-width:640px){
     .hero-headline{font-size:34px}
     .hero-tagline{font-size:17px}
-    .sub-nav .sub-nav-tabs{display:none}
-    .song-grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px}
+    .song-grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px}
     .queue-header{flex-direction:column;gap:10px;align-items:flex-start}
+    .queue-actions{width:100%}
+    .queue-actions .btn{flex:1}
+    .row{padding:16px;gap:12px}
+    .row-title{white-space:normal}
+    .row-msg{white-space:normal}
+    .row-remove{min-width:44px;min-height:44px}
+    .stat{font-size:11px;padding:8px 0}
+    .library-header{flex-direction:column;gap:10px}
+    .library-header .btn-pill-sm{width:100%}
+    .song-actions{opacity:1}
+    .song-action-btn{width:36px;height:36px}
+    .sub-nav{height:auto;min-height:44px;padding:0 16px}
+    .sub-nav .sub-nav-title{font-size:18px}
+    .sub-nav .sub-tab{font-size:13px;padding:8px 12px}
+    .modal{padding:24px}
+    .modal-actions{flex-direction:column}
+    .modal-actions button{width:100%}
+    .confirm-actions{flex-direction:column}
+    .confirm-actions button{width:100%}
+    .footer{padding:32px 16px 24px}
   }
-  @media(max-width:419px){
+  @media(max-width:480px){
     .hero-headline{font-size:28px}
+    .hero-tagline{font-size:15px}
     .tile{padding:32px 16px}
+    .song-grid{grid-template-columns:repeat(2, 1fr);gap:10px}
+    .song-info{padding:10px 12px}
+    .song-info .song-name{font-size:13px}
+    .row{padding:14px;border-radius:14px}
+    .row-icon{width:36px;height:36px;font-size:16px}
+    .row-title{font-size:15px}
+    .stat{font-size:10px;padding:6px 0}
+    .btn-ghost{padding:8px 12px;font-size:13px}
   }
 </style>
 </head>
@@ -781,6 +840,9 @@
       <div class="nav-logo-icon">&#127925;</div>
       Walkman
     </div>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
     <div class="nav-links">
       <button class="nav-link" onclick="switchTab('downloader')">Downloader</button>
       <button class="nav-link" onclick="switchTab('library')">Library</button>
@@ -912,6 +974,17 @@ function switchTab(name) {
   if (panel) panel.style.display = '';
   document.getElementById('subNavTitle').textContent = name === 'library' ? 'Library' : 'Downloader';
   if (name === 'library') loadSongs();
+  const btn = document.getElementById('navHamburger');
+  if (btn) btn.classList.remove('open');
+  document.querySelector('.global-nav .nav-links').classList.remove('show');
+}
+
+// ── Mobile Nav Toggle ────────────────────────
+function toggleMobileNav() {
+  const btn = document.getElementById('navHamburger');
+  const links = document.querySelector('.global-nav .nav-links');
+  btn.classList.toggle('open');
+  links.classList.toggle('show');
 }
 
 // ── Textarea ─────────────────────────────────
