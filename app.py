@@ -100,9 +100,12 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
     # Use temp output, then rename based on metadata
     tmp_tpl = os.path.join(str(SONGS_DIR), "%(id)s.%(ext)s")
 
+    FFMPEG_DIR = r"C:\Users\User\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin"
+
     cmd = [
         "yt-dlp",
         "--js-runtimes", "nodejs",
+        "--ffmpeg-location", FFMPEG_DIR,
         "-x", "--audio-format", "mp3",
         "--audio-quality", "0",
         "--write-thumbnail",
