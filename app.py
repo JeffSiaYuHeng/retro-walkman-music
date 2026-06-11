@@ -176,8 +176,12 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                 final_jpg = SONGS_DIR / f"{clean_name}.jpg"
 
                 if tmp_mp3.exists():
+                    if final_mp3.exists():
+                        final_mp3.unlink()
                     tmp_mp3.rename(final_mp3)
                 if tmp_jpg.exists():
+                    if final_jpg.exists():
+                        final_jpg.unlink()
                     tmp_jpg.rename(final_jpg)
 
                 update_task(task_id, message=f"Saved as: {clean_name}.{ext}")
