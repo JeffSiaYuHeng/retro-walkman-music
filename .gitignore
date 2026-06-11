@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Old Mac app
+MusicDownloader/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

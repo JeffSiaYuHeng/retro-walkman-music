@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Downloader — Walkman</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#0D0D14;
+    --card:#16161F;
+    --card2:#1C1C28;
+    --accent:#8B5CF6;
+    --accent2:#A78BFA;
+    --green:#22C55E;
+    --red:#EF4444;
+    --orange:#F59E0B;
+    --cyan:#06B6D4;
+    --text:#E2E2F0;
+    --dim:#6B6B8A;
+    --border:#2A2A3E;
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:40px 16px;
+  }
+
+  .container{width:100%;max-width:640px}
+
+  /* ── Header ────────────────────────────── */
+  .header{
+    display:flex;align-items:center;gap:14px;
+    margin-bottom:24px;
+    animation:fadeDown .4s ease;
+  }
+  .header .walkman-icon{
+    width:48px;height:48px;
+    background:linear-gradient(135deg,var(--accent),#6D28D9);
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
+    box-shadow:0 4px 20px rgba(139,92,246,0.3);
+    transition:transform .3s;
+  }
+  .header .walkman-icon:hover{transform:rotate(-8deg) scale(1.05)}
+  .header h1{
+    font-family:'Space Mono',monospace;
+    font-size:22px;font-weight:700;letter-spacing:-0.5px;
+  }
+  .header h1 span{color:var(--accent2)}
+
+  /* ── Tabs ──────────────────────────────── */
+  .tabs{
+    display:flex;gap:4px;
+    background:var(--card2);
+    border-radius:12px;padding:4px;
+    margin-bottom:20px;
+    animation:fadeDown .4s ease .05s both;
+  }
+  .tab{
+    flex:1;
+    background:transparent;
+    border:none;
+    border-radius:8px;
+    padding:10px 0;
+    font-size:13px;font-weight:600;
+    font-family:'Inter',sans-serif;
+    color:var(--dim);
+    cursor:pointer;
+    transition:all .2s;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{
+    background:var(--card);
+    color:var(--accent2);
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+  .tab .badge{
+    font-size:10px;
+    background:var(--border);
+    padding:1px 6px;border-radius:4px;
+    color:var(--dim);
+  }
+  .tab.active .badge{background:rgba(139,92,246,.2);color:var(--accent2)}
+
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  /* ── Input Card ────────────────────────── */
+  .input-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:20px;
+    animation:fadeDown .4s ease .1s both;
+  }
+  .input-card label{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;
+    color:var(--dim);margin-bottom:10px;
+  }
+  .input-card label .hint{
+    font-weight:400;text-transform:none;letter-spacing:0;
+    font-size:10px;opacity:.7;
+  }
+  .input-row{display:flex;gap:10px;align-items:flex-end}
+  .input-row textarea{
+    flex:1;
+    background:var(--bg);
+    border:2px solid var(--border);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;color:var(--text);
+    font-family:'Inter',sans-serif;
+    outline:none;resize:vertical;
+    min-height:44px;max-height:200px;
+    transition:border-color .2s, box-shadow .2s;
+    line-height:1.5;
+  }
+  .input-row textarea:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(139,92,246,0.15);
+  }
+  .input-row textarea::placeholder{color:var(--dim)}
+
+  .btn{
+    border:none;border-radius:10px;
+    padding:12px 24px;
+    font-size:13px;font-weight:600;
+    font-family:'Inter',sans-serif;
+    cursor:pointer;transition:all .15s;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:var(--accent);color:#fff;
+    position:relative;overflow:hidden;
+  }
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-primary .ripple{
+    position:absolute;border-radius:50%;
+    background:rgba(255,255,255,.3);
+    transform:scale(0);animation:ripple .6s linear;
+    pointer-events:none;
+  }
+  @keyframes ripple{to{transform:scale(4);opacity:0}}
+
+  /* ── Stats Bar ─────────────────────────── */
+  .stats{
+    display:flex;gap:4px;margin-bottom:20px;
+    background:var(--card2);border-radius:12px;padding:6px;
+    animation:fadeDown .4s ease .2s both;
+  }
+  .stat{
+    flex:1;text-align:center;padding:8px 0;
+    border-radius:8px;font-size:12px;font-weight:500;
+    color:var(--dim);transition:all .3s;
+  }
+  .stat.active{color:var(--accent2);background:rgba(139,92,246,.08)}
+  .stat.done{color:var(--green);background:rgba(34,197,94,.08)}
+  .stat.failed{color:var(--red);background:rgba(239,68,68,.08)}
+
+  /* ── Queue ─────────────────────────────── */
+  .queue-header{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;
+    animation:fadeDown .4s ease .3s both;
+  }
+  .queue-header h2{font-size:14px;font-weight:600}
+  .btn-clear{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--dim);border-radius:8px;
+    padding:6px 14px;font-size:12px;
+    cursor:pointer;font-family:'Inter',sans-serif;
+    transition:all .15s;
+  }
+  .btn-clear:hover{border-color:var(--dim);color:var(--text)}
+
+  /* ── Download Row ──────────────────────── */
+  .row{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;padding:16px;margin-bottom:10px;
+    display:flex;align-items:flex-start;gap:14px;
+    animation:slideIn .3s cubic-bezier(.22,1,.36,1);
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .row:hover{border-color:rgba(139,92,246,.3)}
+  .row.done-row{border-color:rgba(34,197,94,.2)}
+  .row.failed-row{border-color:rgba(239,68,68,.2)}
+
+  @keyframes slideIn{
+    from{opacity:0;transform:translateY(-12px) scale(.98)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+  }
+  @keyframes fadeDown{
+    from{opacity:0;transform:translateY(-8px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  @keyframes fadeUp{
+    from{opacity:1;transform:translateY(0) scale(1)}
+    to{opacity:0;transform:translateY(-8px) scale(.95)}
+  }
+
+  .row-icon{
+    width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;flex-shrink:0;margin-top:2px;
+    transition:all .3s;
+  }
+  .row-icon.queued{background:rgba(107,107,138,.12);color:var(--dim)}
+  .row-icon.downloading{
+    background:rgba(139,92,246,.12);color:var(--accent2);
+    animation:spin 2s linear infinite;
+  }
+  .row-icon.generating{
+    background:rgba(245,158,11,.12);color:var(--orange);
+    animation:pulse 1s ease infinite;
+  }
+  .row-icon.done{
+    background:rgba(34,197,94,.12);color:var(--green);
+    animation:pop .3s cubic-bezier(.22,1,.36,1);
+  }
+  .row-icon.failed{
+    background:rgba(239,68,68,.12);color:var(--red);
+    animation:shake .4s ease;
+  }
+
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes pop{0%{transform:scale(.5)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-4px)}40%{transform:translateX(4px)}
+    60%{transform:translateX(-2px)}80%{transform:translateX(2px)}
+  }
+
+  .row-body{flex:1;min-width:0}
+  .row-title{
+    font-size:13px;font-weight:600;margin-bottom:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .row-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .method-badge{
+    font-size:9px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.5px;
+    padding:2px 6px;border-radius:4px;
+    background:rgba(6,182,212,.12);color:var(--cyan);
+  }
+  .method-badge.fallback{background:rgba(245,158,11,.12);color:var(--orange)}
+  .row-msg{
+    font-size:11px;color:var(--dim);margin-bottom:8px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    transition:color .3s;
+  }
+  .row-msg.success{color:var(--green)}
+  .row-msg.error{color:var(--red)}
+
+  .progress-bar{
+    height:5px;background:var(--border);
+    border-radius:3px;overflow:hidden;
+  }
+  .progress-bar .fill{
+    height:100%;border-radius:3px;transition:width .3s;
+  }
+  .progress-bar .fill.indeterminate{
+    width:40% !important;
+    animation:indeterminate 1.2s ease infinite;
+  }
+  @keyframes indeterminate{
+    0%{transform:translateX(-100%)}
+    100%{transform:translateX(350%)}
+  }
+  .fill.downloading{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .fill.generating{background:linear-gradient(90deg,var(--orange),#FBBF24)}
+  .fill.done{background:var(--green)}
+  .fill.failed{background:var(--red)}
+
+  .row-remove{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--dim);
+    width:30px;height:30px;border-radius:8px;
+    cursor:pointer;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:2px;transition:all .15s;
+  }
+  .row-remove:hover{background:var(--red);border-color:var(--red);color:#fff;transform:scale(1.1)}
+
+  /* ── Empty state ───────────────────────── */
+  .empty{
+    text-align:center;padding:50px 20px;
+    color:var(--dim);font-size:13px;line-height:1.8;
+    animation:fadeDown .4s ease;
+  }
+
+  /* ── Skeleton Loading ──────────────────── */
+  .skeleton{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;padding:16px;margin-bottom:10px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .sk-circle{
+    width:36px;height:36px;border-radius:10px;
+    background:var(--border);
+    animation:skPulse 1.5s ease infinite;
+    flex-shrink:0;
+  }
+  .sk-lines{flex:1;display:flex;flex-direction:column;gap:8px}
+  .sk-line{
+    height:12px;border-radius:6px;
+    background:var(--border);
+    animation:skPulse 1.5s ease infinite;
+  }
+  .sk-line.w60{width:60%}
+  .sk-line.w40{width:40%}
+  .sk-line.w80{width:80%}
+  .sk-line.w30{width:30%;animation-delay:.2s}
+  @keyframes skPulse{
+    0%,100%{opacity:.4}
+    50%{opacity:.8}
+  }
+
+  /* ── Library Grid ──────────────────────── */
+  .library-header{
+    display:flex;gap:10px;margin-bottom:16px;
+    animation:fadeDown .4s ease;
+  }
+  .search-box{
+    flex:1;
+    background:var(--card);
+    border:2px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:13px;color:var(--text);
+    font-family:'Inter',sans-serif;
+    outline:none;
+    transition:border-color .2s;
+  }
+  .search-box:focus{border-color:var(--accent)}
+  .search-box::placeholder{color:var(--dim)}
+
+  .library-count{
+    font-size:11px;color:var(--dim);
+    margin-bottom:12px;
+    animation:fadeDown .4s ease .1s both;
+  }
+
+  .song-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+    gap:12px;
+  }
+  .song-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    transition:all .2s;
+    cursor:default;
+    animation:fadeDown .3s ease both;
+  }
+  .song-card:hover{
+    border-color:rgba(139,92,246,.3);
+    transform:translateY(-2px);
+    box-shadow:0 4px 16px rgba(0,0,0,.3);
+  }
+  .song-cover{
+    width:100%;aspect-ratio:1;
+    background:var(--card2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:32px;color:var(--dim);
+    position:relative;overflow:hidden;
+  }
+  .song-cover img{
+    width:100%;height:100%;
+    object-fit:cover;
+    transition:transform .3s;
+  }
+  .song-card:hover .song-cover img{transform:scale(1.05)}
+  .song-cover .no-cover{
+    width:100%;height:100%;
+    background:linear-gradient(135deg,var(--card2),var(--card));
+    display:flex;align-items:center;justify-content:center;
+    font-size:32px;
+  }
+  .song-info{padding:10px 12px}
+  .song-info .song-name{
+    font-size:12px;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    margin-bottom:4px;
+  }
+  .song-info .song-artist{
+    font-size:10px;color:var(--dim);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* ── Modal ─────────────────────────────── */
+  .modal-overlay{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.6);
+    backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    z-index:200;
+    opacity:0;pointer-events:none;
+    transition:opacity .25s;
+  }
+  .modal-overlay.show{opacity:1;pointer-events:auto}
+  .modal{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    width:90%;max-width:400px;
+    transform:scale(.95);
+    transition:transform .25s cubic-bezier(.22,1,.36,1);
+  }
+  .modal-overlay.show .modal{transform:scale(1)}
+  .modal h3{
+    font-size:16px;font-weight:600;
+    margin-bottom:8px;
+  }
+  .modal p{
+    font-size:13px;color:var(--dim);
+    line-height:1.6;margin-bottom:20px;
+  }
+  .modal .dup-list{
+    background:var(--bg);
+    border-radius:8px;padding:10px 14px;
+    margin-bottom:16px;max-height:150px;overflow-y:auto;
+  }
+  .modal .dup-list .dup-item{
+    font-size:12px;color:var(--orange);
+    padding:4px 0;
+    display:flex;align-items:center;gap:6px;
+  }
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  .btn-secondary{
+    background:var(--card2);color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn-secondary:hover{background:var(--border)}
+  .btn-danger{background:var(--red);color:#fff}
+  .btn-danger:hover{background:#DC2626}
+
+  /* ── Toast Container ───────────────────── */
+  .toast-container{
+    position:fixed;bottom:24px;left:50%;
+    transform:translateX(-50%);
+    display:flex;flex-direction:column-reverse;gap:8px;
+    z-index:300;pointer-events:none;
+    width:90%;max-width:380px;
+  }
+  .toast{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 16px;
+    font-size:13px;
+    box-shadow:0 8px 30px rgba(0,0,0,.4);
+    pointer-events:auto;
+    display:flex;align-items:center;gap:10px;
+    animation:toastIn .4s cubic-bezier(.22,1,.36,1);
+    transition:all .3s ease;
+  }
+  .toast.removing{
+    opacity:0;transform:translateY(10px) scale(.95);
+  }
+  .toast .toast-icon{font-size:16px;flex-shrink:0}
+  .toast .toast-msg{flex:1;font-size:13px}
+  .toast .toast-close{
+    background:transparent;border:none;
+    color:var(--dim);cursor:pointer;
+    font-size:14px;padding:4px;
+    transition:color .15s;
+  }
+  .toast .toast-close:hover{color:var(--text)}
+  .toast.success{border-color:rgba(34,197,94,.3)}
+  .toast.success .toast-icon{color:var(--green)}
+  .toast.error{border-color:rgba(239,68,68,.3)}
+  .toast.error .toast-icon{color:var(--red)}
+  .toast.warning{border-color:rgba(245,158,11,.3)}
+  .toast.warning .toast-icon{color:var(--orange)}
+  .toast.info{border-color:rgba(6,182,212,.3)}
+  .toast.info .toast-icon{color:var(--cyan)}
+
+  @keyframes toastIn{
+    from{opacity:0;transform:translateY(20px) scale(.9)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="walkman-icon">🎵</div>
+    <h1>Music <span>Downloader</span></h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('downloader')">
+      ⬇ Downloader
+    </button>
+    <button class="tab" onclick="switchTab('library')">
+      📚 Library <span class="badge" id="libBadge">0</span>
+    </button>
+  </div>
+
+  <!-- Tab: Downloader -->
+  <div class="tab-panel active" id="panel-downloader">
+    <!-- Input -->
+    <div class="input-card">
+      <label>Song Name or URL <span class="hint">One per line for batch download</span></label>
+      <div class="input-row">
+        <textarea id="songInput" rows="1" placeholder="Song name, YouTube URL, or Spotify URL&#10;Paste multiple lines for batch download" autofocus></textarea>
+        <button class="btn btn-primary" id="downloadBtn" onclick="startDownload(event)">Download</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="stats">
+      <div class="stat" id="statTotal">0 total</div>
+      <div class="stat active" id="statActive">0 active</div>
+      <div class="stat done" id="statDone">0 done</div>
+      <div class="stat failed" id="statFailed">0 failed</div>
+    </div>
+
+    <!-- Queue -->
+    <div class="queue-header">
+      <h2 id="queueTitle">Downloads</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn-clear" onclick="pushToGitHub()" id="pushBtn">Push to GitHub</button>
+        <button class="btn-clear" onclick="clearDone()">Clear done</button>
+      </div>
+    </div>
+    <div id="queue"></div>
+  </div>
+
+  <!-- Tab: Library -->
+  <div class="tab-panel" id="panel-library">
+    <div class="library-header">
+      <input type="text" class="search-box" id="searchBox" placeholder="Search songs..." oninput="filterLibrary()">
+    </div>
+    <div class="library-count" id="libraryCount">Loading...</div>
+    <div class="song-grid" id="songGrid"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">Duplicate Songs</h3>
+    <p id="modalMsg">These songs already exist in your library:</p>
+    <div class="dup-list" id="dupList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="modalConfirm">Download Anyway</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const queue = document.getElementById('queue');
+const songInput = document.getElementById('songInput');
+const downloadBtn = document.getElementById('downloadBtn');
+const toastContainer = document.getElementById('toastContainer');
+
+let tasks = {};
+let allSongs = [];
+let pendingDownload = null;
+
+// ── Tab Switching ────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[onclick*="${name}"]`).classList.add('active');
+  document.getElementById(`panel-${name}`).classList.add('active');
+  if (name === 'library') loadSongs();
+}
+
+// ── Textarea ─────────────────────────────────
+songInput.addEventListener('input', () => {
+  songInput.style.height = 'auto';
+  songInput.style.height = Math.min(songInput.scrollHeight, 200) + 'px';
+});
+songInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    startDownload(e);
+  }
+});
+
+// ── Toast System ─────────────────────────────
+function showToast(msg, type='success', duration=3000) {
+  const icons = {success:'✓',error:'✗',warning:'⚠',info:'ℹ'};
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || 'ℹ'}</span>
+    <span class="toast-msg">${esc(msg)}</span>
+    <button class="toast-close" onclick="removeToast(this.parentElement)">&times;</button>
+  `;
+  toastContainer.appendChild(toast);
+  if (duration > 0) {
+    setTimeout(() => removeToast(toast), duration);
+  }
+}
+
+function removeToast(el) {
+  if (!el || el.classList.contains('removing')) return;
+  el.classList.add('removing');
+  setTimeout(() => el.remove(), 300);
+}
+
+// ── Modal ────────────────────────────────────
+function showModal(title, msg, duplicates, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').textContent = msg;
+  document.getElementById('dupList').innerHTML = duplicates
+    .map(d => `<div class="dup-item">⚠ ${esc(d)}</div>`).join('');
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('modalConfirm').onclick = () => {
+    closeModal();
+    onConfirm();
+  };
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Ripple Effect ────────────────────────────
+function createRipple(e, btn) {
+  const circle = document.createElement('span');
+  const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+  const radius = diameter / 2;
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - radius}px`;
+  circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - radius}px`;
+  circle.classList.add('ripple');
+  btn.appendChild(circle);
+  setTimeout(() => circle.remove(), 600);
+}
+
+// ── Download Flow ────────────────────────────
+async function startDownload(e) {
+  const song = songInput.value.trim();
+  if (!song) {
+    songInput.focus();
+    songInput.style.borderColor = 'var(--red)';
+    setTimeout(() => songInput.style.borderColor = '', 1000);
+    return;
+  }
+
+  createRipple(e, downloadBtn);
+  downloadBtn.disabled = true;
+
+  // Check for duplicates
+  const lines = song.split('\n').map(l => l.trim()).filter(Boolean);
+  try {
+    const res = await fetch('/api/check-duplicate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({songs: lines}),
+    });
+    const data = await res.json();
+
+    if (data.duplicates && data.duplicates.length > 0) {
+      showModal(
+        'Duplicate Songs Found',
+        `${data.duplicates.length} song(s) may already exist in your library:`,
+        data.duplicates,
+        () => doDownload(song)  // Proceed anyway
+      );
+      downloadBtn.disabled = false;
+      return;
+    }
+  } catch(err) {
+    // If check fails, proceed anyway
+  }
+
+  doDownload(song);
+}
+
+async function doDownload(song) {
+  songInput.value = '';
+  songInput.style.height = 'auto';
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({song}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const items = Array.isArray(data) ? data : [data];
+    items.forEach(item => {
+      tasks[item.id] = {
+        id: item.id,
+        song: item.song,
+        input_type: item.input_type,
+        method: '',
+        status: 'queued',
+        message: 'Queued...',
+      };
+      pollStatus(item.id);
+    });
+
+    renderQueue();
+    if (items.length > 1) {
+      showToast(`Queued ${items.length} songs`, 'info');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    downloadBtn.disabled = false;
+  }
+}
+
+// ── Poll Status ──────────────────────────────
+async function pollStatus(id) {
+  const poll = async () => {
+    try {
+      const res = await fetch(`/api/status/${id}`);
+      const data = await res.json();
+      tasks[id] = {...tasks[id], ...data};
+      renderQueue();
+
+      if (data.status === 'done' || data.status === 'failed') {
+        loadSongs();
+        if (data.status === 'done') {
+          showToast(`Downloaded: ${data.song}`, 'success');
+        } else {
+          showToast(`Failed: ${data.message}`, 'error');
+        }
+        return;
+      }
+      setTimeout(poll, 800);
+    } catch(e) {
+      setTimeout(poll, 2000);
+    }
+  };
+  poll();
+}
+
+// ── Render Queue ─────────────────────────────
+function renderQueue() {
+  const arr = Object.values(tasks).reverse();
+  const active = arr.filter(t => ['downloading','generating'].includes(t.status)).length;
+  const done = arr.filter(t => t.status === 'done').length;
+  const failed = arr.filter(t => t.status === 'failed').length;
+
+  document.getElementById('statTotal').textContent = arr.length + ' total';
+  document.getElementById('statActive').textContent = active + ' active';
+  document.getElementById('statDone').textContent = done + ' done';
+  document.getElementById('statFailed').textContent = failed + ' failed';
+  document.getElementById('queueTitle').textContent = arr.length ? `Downloads (${arr.length})` : 'Downloads';
+
+  if (!arr.length) {
+    queue.innerHTML = '<div class="empty">No downloads yet<br>Paste a song name, YouTube URL, or Spotify URL above</div>';
+    return;
+  }
+
+  queue.innerHTML = arr.map(t => {
+    const typeIcons = {youtube:'▶',spotify:'🎵',search:'🔍'};
+    const statusIcons = {queued:'⏳',downloading:'',generating:'',done:'✓',failed:'✗'};
+    const typeIcon = typeIcons[t.input_type] || '🎵';
+    const isBusy = ['downloading','generating'].includes(t.status);
+    const isFinal = ['done','failed'].includes(t.status);
+    const msgClass = t.status === 'done' ? 'success' : t.status === 'failed' ? 'error' : '';
+    const rowClass = t.status === 'done' ? 'done-row' : t.status === 'failed' ? 'failed-row' : '';
+    const methodBadge = t.method === 'yt-dlp'
+      ? '<span class="method-badge fallback">yt-dlp</span>'
+      : t.method === 'ytmdl'
+      ? '<span class="method-badge">ytmdl</span>'
+      : '';
+
+    return `
+      <div class="row ${rowClass}" id="row-${t.id}">
+        <div class="row-icon ${t.status}">${isFinal ? statusIcons[t.status] : typeIcon}</div>
+        <div class="row-body">
+          <div class="row-title">${esc(t.song)}</div>
+          <div class="row-meta">${methodBadge}</div>
+          <div class="row-msg ${msgClass}">${esc(t.message)}</div>
+          <div class="progress-bar">
+            <div class="fill ${t.status} ${isBusy?'indeterminate':''}"
+                 style="width:${t.status==='done'?'100':isBusy?'40':'0'}%"></div>
+          </div>
+        </div>
+        <button class="row-remove" onclick="removeTask('${t.id}')">&times;</button>
+      </div>`;
+  }).join('');
+}
+
+function removeTask(id) {
+  const el = document.getElementById('row-' + id);
+  if (el) {
+    el.style.animation = 'fadeUp .2s ease forwards';
+    setTimeout(() => { delete tasks[id]; renderQueue(); }, 200);
+  } else {
+    delete tasks[id]; renderQueue();
+  }
+}
+
+function clearDone() {
+  const toRemove = Object.keys(tasks).filter(id =>
+    tasks[id].status === 'done' || tasks[id].status === 'failed'
+  );
+  if (!toRemove.length) return;
+  toRemove.forEach(id => {
+    const el = document.getElementById('row-' + id);
+    if (el) el.style.animation = 'fadeUp .2s ease forwards';
+  });
+  setTimeout(() => {
+    toRemove.forEach(id => delete tasks[id]);
+    renderQueue();
+  }, 200);
+}
+
+async function pushToGitHub() {
+  const btn = document.getElementById('pushBtn');
+  btn.disabled = true;
+  btn.textContent = 'Pushing...';
+  try {
+    const res = await fetch('/api/push', {method: 'POST'});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast('Pushed to GitHub', 'success');
+  } catch(e) {
+    showToast('Push failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Push to GitHub';
+  }
+}
+
+// ── Library ──────────────────────────────────
+function showSkeleton() {
+  const grid = document.getElementById('songGrid');
+  grid.innerHTML = Array(8).fill(0).map(() => `
+    <div class="skeleton">
+      <div class="sk-circle"></div>
+      <div class="sk-lines">
+        <div class="sk-line w80"></div>
+        <div class="sk-line w40 sk-line-delay"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadSongs() {
+  const grid = document.getElementById('songGrid');
+  showSkeleton();
+
+  try {
+    const res = await fetch('/api/songs');
+    allSongs = await res.json();
+
+    document.getElementById('libBadge').textContent = allSongs.length;
+    document.getElementById('libraryCount').textContent = `${allSongs.length} songs in library`;
+
+    renderLibrary(allSongs);
+  } catch(e) {
+    grid.innerHTML = '<div class="empty">Failed to load songs</div>';
+  }
+}
+
+function renderLibrary(songs) {
+  const grid = document.getElementById('songGrid');
+
+  if (!songs.length) {
+    grid.innerHTML = '<div class="empty">No songs yet</div>';
+    return;
+  }
+
+  grid.innerHTML = songs.map((s, i) => {
+    const name = s.replace(/\.mp3$/i, '');
+    // Parse "Artist - Title" format
+    const parts = name.split(' - ');
+    const artist = parts.length > 1 ? parts[0].trim() : '';
+    const title = parts.length > 1 ? parts.slice(1).join(' - ').trim() : name;
+    const coverUrl = `/songs/${encodeURIComponent(name)}.jpg`;
+
+    return `
+      <div class="song-card" style="animation-delay:${Math.min(i * 30, 300)}ms">
+        <div class="song-cover">
+          <img src="${coverUrl}" alt="${esc(title)}"
+               onerror="this.parentElement.innerHTML='<div class=no-cover>🎵</div>'"
+               loading="lazy">
+        </div>
+        <div class="song-info">
+          <div class="song-name" title="${esc(title)}">${esc(title)}</div>
+          ${artist ? `<div class="song-artist" title="${esc(artist)}">${esc(artist)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterLibrary() {
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  if (!q) {
+    renderLibrary(allSongs);
+    document.getElementById('libraryCount').textContent = `${allSongs.length} songs in library`;
+    return;
+  }
+  const filtered = allSongs.filter(s => s.toLowerCase().includes(q));
+  renderLibrary(filtered);
+  document.getElementById('libraryCount').textContent = `${filtered.length} of ${allSongs.length} songs`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Init ─────────────────────────────────────
+loadSongs();
+</script>
+</body>
+</html>
