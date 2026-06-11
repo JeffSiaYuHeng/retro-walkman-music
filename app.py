@@ -123,6 +123,7 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
     ]
 
     try:
+        print(f"Running yt-dlp: {' '.join(cmd[:5])}...")
         # Run and capture JSON output for metadata
         process = subprocess.Popen(
             cmd,
@@ -132,15 +133,19 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
             cwd=str(BASE_DIR),
         )
         json_output = ""
+        all_output = []
         for line in process.stdout:
             line = line.strip()
             if line.startswith('{'):
                 json_output = line
             elif line:
+                all_output.append(line[:100])
                 update_task(task_id, message=line[:200])
         process.wait()
 
         if process.returncode != 0:
+            print(f"yt-dlp failed with return code {process.returncode}")
+            print(f"yt-dlp output: {all_output[:3]}")
             return False
 
         # Parse metadata and rename file
@@ -239,6 +244,17 @@ def _embed_single(cover_path: Path, mp3_path: Path, mime: str):
 
 def run_download(task_id: str, query: str):
     """Download with fallback: ytmdl → yt-dlp."""
+    try:
+        _run_download_inner(task_id, query)
+    except Exception as e:
+        import traceback
+        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
+            f.write(f"FATAL ERROR: {e}\n")
+            f.write(traceback.format_exc() + "\n")
+        update_task(task_id, status="failed", message=str(e)[:200])
+
+
+def _run_download_inner(task_id: str, query: str):
     input_type, _ = detect_input_type(query)
 
     update_task(task_id,
@@ -252,14 +268,20 @@ def run_download(task_id: str, query: str):
 
     try:
         SONGS_DIR.mkdir(exist_ok=True)
+        # Write debug to file
+        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
+            f.write(f"Starting download for: {query}\n")
 
-        # Primary: ytmdl
-        success = try_ytmdl(query, input_type, task_id)
+        # Skip ytmdl (doesn't work without JS runtime on this system)
+        # Go straight to yt-dlp
+        success = try_ytdlp_fallback(query, input_type, task_id)
+        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
+            f.write(f"yt-dlp result: {success}\n")
 
-        # Fallback: yt-dlp
+        # Fallback: try ytmdl if yt-dlp failed
         if not success:
-            update_task(task_id, message="ytmdl failed, falling back to yt-dlp...")
-            success = try_ytdlp_fallback(query, input_type, task_id)
+            update_task(task_id, message="yt-dlp failed, trying ytmdl...")
+            success = try_ytmdl(query, input_type, task_id)
 
         if success:
             update_task(task_id, status="generating", message="Generating songs.json...")
@@ -269,7 +291,8 @@ def run_download(task_id: str, query: str):
             update_task(task_id, status="failed", message="Download failed with all methods")
 
     except Exception as e:
-        update_task(task_id, status="failed", message=str(e))
+        print(f"Download error for {query}: {e}")
+        update_task(task_id, status="failed", message=str(e)[:200])
 
 
 def run_generate_json():
@@ -397,6 +420,9 @@ def download():
 
         thread = threading.Thread(target=run_download, args=(task_id, line), daemon=True)
         thread.start()
+        # Debug: write to file
+        with open(os.path.join(str(BASE_DIR), "debug.log"), "a") as f:
+            f.write(f"Thread started for task {task_id}: {line}\n")
         results.append({"id": task_id, "song": line, "input_type": input_type})
 
     return jsonify(results if len(results) > 1 else results[0])
