@@ -197,3 +197,102 @@ Old Windows Laptop
     ▼ jsDelivr CDN
 songs.json URLs point to latest songs
 ```
+
+---
+
+## Enrich Workflow
+
+### Single Song Enrich
+
+```
+POST /api/enrich
+{filename: "NA - Some Song.mp3"}
+    │
+    ▼
+Strip .mp3 → get query
+Split by " - " → use right part as search query
+    │
+    ▼
+ytmusicapi.search(query, filter="songs", limit=5)
+    │
+    ▼
+Return: title, artists, album, duration, thumbnail, videoId
+```
+
+### Batch Enrich (Enrich All)
+
+```
+POST /api/enrich-all
+    │
+    ▼
+List all .mp3 files in songs/
+    │
+    ▼
+For each file:
+    ├─ Split filename by " - "
+    ├─ Skip if artist is real (not NA, len < 60)
+    ├─ Search ytmusicapi for the title part
+    ├─ Build new name: "Artist - Title.mp3"
+    └─ Rename MP3 + cover image
+    │
+    ▼
+If any files renamed → run_generate_json()
+    │
+    ▼
+Return: {enriched: N, results: [...]}
+```
+
+**Skip Logic:**
+```
+filename: "Beyond - 光輝歲月.mp3"
+    → artist = "Beyond" (real, len=6) → SKIP
+
+filename: "NA - Some Song.mp3"
+    → artist = "NA" → ENRICH
+
+filename: "Some Song.mp3"
+    → no " - " → artist = "" → ENRICH
+```
+
+---
+
+## Rename Workflow
+
+```
+POST /api/rename
+{old_name: "Old.mp3", new_name: "New.mp3"}
+    │
+    ▼
+Validate both fields present
+Ensure .mp3 extension
+Check old file exists
+Check new name doesn't conflict
+    │
+    ▼
+Rename MP3: songs/Old.mp3 → songs/New.mp3
+Rename cover: songs/Old.jpg → songs/New.jpg (if exists)
+    │
+    ▼
+run_generate_json()
+Return: {status: "ok", new_name: "New.mp3"}
+```
+
+---
+
+## Delete Workflow
+
+```
+POST /api/delete
+{name: "Some Song.mp3"}
+    │
+    ▼
+Check file exists
+    │
+    ▼
+Delete MP3: songs/Some Song.mp3
+Delete cover: songs/Some Song.jpg (if exists)
+    │
+    ▼
+run_generate_json()
+Return: {status: "ok"}
+```

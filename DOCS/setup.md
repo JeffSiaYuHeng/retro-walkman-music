@@ -21,6 +21,8 @@ pip install -r requirements.txt
 flask>=3.0
 ytmdl>=2024.0
 yt-dlp>=2024.0
+ytmusicapi>=1.0
+mutagen>=1.47
 ```
 
 ### 2. Install Node Dependencies
@@ -63,16 +65,16 @@ python3 app.py
 ```
 🎵 Music Downloader Web UI
    Songs dir: /path/to/songs
-   Open http://localhost:5000
+   Open http://localhost:5169
 ```
 
-Open `http://localhost:5000` in your browser.
+Open `http://localhost:5169` in your browser.
 
 ## Configuration
 
 ### Port
 
-Default: `5000`. Change in `app.py`:
+Default: `5169`. Change in `app.py`:
 
 ```python
 app.run(host="0.0.0.0", port=8080)  # Change to 8080
@@ -100,12 +102,12 @@ const branch = "main";
 ### Port already in use
 
 ```
-Port 5000 is in use by another program
+Port 5169 is in use by another program
 ```
 
 **Solution:** Kill the process or use a different port:
 ```bash
-lsof -i :5000
+lsof -i :5169
 kill -9 <PID>
 ```
 

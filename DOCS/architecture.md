@@ -19,6 +19,8 @@
 │  ┌───────────────────────────────────────────────────────────┐ │
 │  │                    API Routes                             │ │
 │  │  /api/download  /api/status  /api/songs  /api/check-dup   │ │
+│  │  /api/rename  /api/delete  /api/enrich  /api/enrich-all   │ │
+│  │  /api/push  /api/git-status                                │ │
 │  └─────────────────────────┬─────────────────────────────────┘ │
 │                            │                                    │
 │  ┌─────────────────────────▼─────────────────────────────────┐ │
@@ -55,6 +57,9 @@
 | Download Orchestrator | ytmdl → yt-dlp fallback logic |
 | Cover Embedder | Embed thumbnails into MP3 metadata |
 | Generate Trigger | Debounced songs.json regeneration |
+| Song Manager | Rename/delete songs with cover sync |
+| Metadata Enricher | ytmusicapi search, batch rename with artist info |
+| Git Auto-Push | Auto commit and push songs to GitHub |
 
 ### Frontend (index.html)
 
@@ -77,6 +82,7 @@
 | Node.js | Runs generate-songs-json.js |
 | mutagen | MP3 metadata manipulation |
 | music-metadata | MP3 metadata reading |
+| ytmusicapi | YouTube Music metadata search (enrich) |
 
 ## Thread Model
 

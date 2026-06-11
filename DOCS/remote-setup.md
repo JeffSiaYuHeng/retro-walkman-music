@@ -67,7 +67,7 @@ Output:
 ```
 🎵 Music Downloader Web UI
    Songs dir: C:\Users\...\retro-walkman-music\songs
-   Open http://localhost:5000
+   Open http://localhost:5169
 ```
 
 ## Access from Other Devices
@@ -79,7 +79,7 @@ Find the laptop's IP:
 ipconfig
 ```
 
-Access via: `http://192.168.x.x:5000`
+Access via: `http://192.168.x.x:5169`
 
 ### Public Internet (via ngrok)
 
@@ -88,7 +88,7 @@ Access via: `http://192.168.x.x:5000`
 winget install ngrok
 
 # Start tunnel
-ngrok http 5000
+ngrok http 5169
 ```
 
 Output gives you a public URL like: `https://xxxx.ngrok.io`
@@ -125,10 +125,10 @@ ssh -T git@github.com
 # Should see: "Hi JeffSiaYuHeng! You've successfully authenticated..."
 ```
 
-### Port 5000 blocked
+### Port 5169 blocked
 ```powershell
-# Check what's using port 5000
-netstat -ano | findstr :5000
+# Check what's using port 5169
+netstat -ano | findstr :5169
 
 # Or use a different port in app.py
 # Change: app.run(port=8080)

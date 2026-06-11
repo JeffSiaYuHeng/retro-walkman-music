@@ -117,6 +117,53 @@ Each download row:
 - Cover image with hover zoom
 - Fallback icon on missing cover
 - Search filters in real-time
+- Hover reveals action buttons (rename, delete)
+
+### Library Actions
+
+**Enrich Button** (in library header):
+
+```
+┌─────────────────────────────────────────────────┐
+│ ┌──────────────────────────────┐ ┌────────────┐ │
+│ │ Search songs...              │ │ ✨ Enrich  │ │
+│ └──────────────────────────────┘ └────────────┘ │
+└─────────────────────────────────────────────────┘
+```
+
+- Calls `POST /api/enrich-all` to batch-fix missing artist info
+- Searches ytmusicapi for songs with NA/generic artist names
+- Renames files to `Artist - Title.mp3` format
+- Button shows "✨ Enriching..." while processing
+
+**Rename Action** (hover over song card):
+
+```
+┌────────────────┐
+│  [Cover Art]   │
+│  ┌────┐ ┌────┐ │
+│  │ ✏ │ │ 🗑 │ │  ← appears on hover
+│  └────┘ └────┘ │
+├────────────────┤
+│ ┌────────────┐ │
+│ │ New Name   │ │  ← inline input
+│ ├─────┬──────┤ │
+│ │Save│Cancel│ │
+│ └─────┴──────┘ │
+│ Title          │
+│ Artist         │
+└────────────────┘
+```
+
+- Click rename (✏) → inline text input replaces title/artist
+- Enter to save, Escape to cancel
+- Calls `POST /api/rename`
+
+**Delete Action** (hover over song card):
+
+- Click delete (🗑) → confirm modal appears
+- Calls `POST /api/delete` on confirmation
+- Removes MP3 and cover image
 
 ### Toast System
 
@@ -154,6 +201,24 @@ Stackable notifications at bottom:
 
 - Blur backdrop
 - Scale-in animation
+- Click outside to close
+
+### Confirm Modal
+
+Used for delete confirmation:
+
+```
+┌─────────────────────────────────────┐
+│ Delete Song                         │
+│                                     │
+│ Delete "Beyond — 光輝歲月"?          │
+│ This cannot be undone.              │
+│                                     │
+│         [Cancel]  [Delete]          │
+└─────────────────────────────────────┘
+```
+
+- Red delete button
 - Click outside to close
 
 ### Skeleton Loading

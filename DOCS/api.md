@@ -1,6 +1,6 @@
 # API Reference
 
-Base URL: `http://localhost:5000`
+Base URL: `http://localhost:5169`
 
 ## Endpoints
 
@@ -133,6 +133,133 @@ Manually trigger songs.json regeneration.
 ```json
 {
   "status": "ok"
+}
+```
+
+---
+
+### `POST /api/rename`
+
+Rename a song file (and its cover image).
+
+**Request Body:**
+```json
+{
+  "old_name": "Beyond - 光輝歲月.mp3",
+  "new_name": "Beyond - Guang Hui Sui Yue.mp3"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "new_name": "Beyond - Guang Hui Sui Yue.mp3"
+}
+```
+
+**Errors:**
+| Status | Meaning |
+|--------|---------|
+| 400 | Missing old_name or new_name |
+| 404 | File not found |
+| 409 | Target name already exists |
+
+---
+
+### `POST /api/delete`
+
+Delete a song file (and its cover image).
+
+**Request Body:**
+```json
+{
+  "name": "Beyond - 光輝歲月.mp3"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+### `POST /api/enrich`
+
+Fetch artist/album metadata for a single song using ytmusicapi.
+
+**Request Body:**
+```json
+{
+  "filename": "Beyond - 光輝歲月.mp3"
+}
+```
+
+**Response:**
+```json
+{
+  "title": "光輝歲月",
+  "artists": ["Beyond"],
+  "artist": "Beyond",
+  "album": "命运派对",
+  "duration": 296,
+  "thumbnail": "https://...",
+  "videoId": "xxxxxxxxxxx"
+}
+```
+
+---
+
+### `POST /api/enrich-all`
+
+Batch enrich all songs with missing/invalid artist info. Searches ytmusicapi for each song, renames files to `Artist - Title.mp3` format.
+
+**Response:**
+```json
+{
+  "enriched": 3,
+  "results": [
+    {
+      "old": "NA - Some Song.mp3",
+      "new": "Some Artist - Some Song.mp3",
+      "artist": "Some Artist",
+      "album": "Some Album"
+    }
+  ]
+}
+```
+
+**Skip conditions:**
+- Artist name already present and not "NA"
+- Artist name length < 60 characters
+
+---
+
+### `POST /api/push`
+
+Manually trigger git add, commit, and push to GitHub.
+
+**Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+### `GET /api/git-status`
+
+Check git working tree status.
+
+**Response:**
+```json
+{
+  "changes": 2,
+  "clean": false
 }
 ```
 
