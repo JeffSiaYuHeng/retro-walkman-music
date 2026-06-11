@@ -67,8 +67,9 @@ def run_cmd(cmd: list[str], task_id: str, timeout: int = 120) -> int:
 def try_ytmdl(query: str, input_type: str, task_id: str) -> bool:
     """Try downloading with ytmdl. Returns True on success."""
     update_task(task_id, method="ytmdl")
+    YTMDL = r"C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Scripts\ytmdl.exe"
     cmd = [
-        "ytmdl",
+        YTMDL,
         "--output-dir", str(SONGS_DIR),
         "--quiet",
         "--disable-sort",
@@ -101,9 +102,10 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
     tmp_tpl = os.path.join(str(SONGS_DIR), "%(id)s.%(ext)s")
 
     FFMPEG_DIR = r"C:\Users\User\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin"
+    YT_DLP = r"C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Scripts\yt-dlp.exe"
 
     cmd = [
-        "yt-dlp",
+        YT_DLP,
         "--js-runtimes", "nodejs",
         "--ffmpeg-location", FFMPEG_DIR,
         "-x", "--audio-format", "mp3",
