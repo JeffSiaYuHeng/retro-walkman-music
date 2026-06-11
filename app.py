@@ -193,6 +193,17 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                         final_jpg.unlink()
                     tmp_jpg.rename(final_jpg)
 
+                # Write ID3 metadata tags
+                yt_title = info.get('title', '')
+                yt_artist = info.get('artist') or info.get('uploader') or ''
+                yt_album = info.get('album') or ''
+                yt_track = info.get('track_number') or info.get('playlist_index') or 0
+                yt_year = info.get('release_year') or info.get('upload_date', '')[:4] or ''
+                yt_genre = info.get('genre') or ''
+                if final_mp3.exists() and (yt_title or yt_artist):
+                    write_id3_tags(final_mp3, title=yt_title, artist=yt_artist,
+                                   album=yt_album, track=yt_track, year=yt_year, genre=yt_genre)
+
                 update_task(task_id, message=f"Saved as: {clean_name}.{ext}")
             except json.JSONDecodeError:
                 pass
@@ -255,6 +266,36 @@ def _embed_single(cover_path: Path, mp3_path: Path, mime: str, force: bool = Fal
         audio.save()
     except Exception as e:
         print(f"Failed to embed cover for {mp3_path.name}: {e}")
+
+
+def write_id3_tags(mp3_path: Path, title: str = "", artist: str = "", album: str = "",
+                   track: int = 0, year: str = "", genre: str = ""):
+    """Write ID3 metadata tags to an MP3 file."""
+    try:
+        from mutagen.mp3 import MP3
+        from mutagen.id3 import ID3, TIT2, TPE1, TALB, TRCK, TDRC, TCON
+
+        audio = MP3(str(mp3_path), ID3=ID3)
+        if audio.tags is None:
+            audio.add_tags()
+
+        if title:
+            audio.tags.setall('TIT2', [TIT2(encoding=3, text=title)])
+        if artist:
+            audio.tags.setall('TPE1', [TPE1(encoding=3, text=artist)])
+        if album:
+            audio.tags.setall('TALB', [TALB(encoding=3, text=album)])
+        if track:
+            audio.tags.setall('TRCK', [TRCK(encoding=3, text=str(track))])
+        if year:
+            audio.tags.setall('TDRC', [TDRC(encoding=3, text=str(year))])
+        if genre:
+            audio.tags.setall('TCON', [TCON(encoding=3, text=genre)])
+
+        audio.save()
+        print(f"[ID3] Wrote tags to {mp3_path.name}: {artist} - {title}")
+    except Exception as e:
+        print(f"[ID3] Failed to write tags for {mp3_path.name}: {e}")
 
 
 def run_download(task_id: str, query: str):
@@ -668,7 +709,13 @@ def enrich_song():
 
         if cover_url:
             download_and_embed_cover(cover_url, filename)
-            run_generate_json()
+
+        # Write ID3 metadata tags
+        mp3_path = SONGS_DIR / filename
+        if mp3_path.exists():
+            write_id3_tags(mp3_path, title=title, artist=artist, album=album_name)
+
+        run_generate_json()
 
         return jsonify({
             "title": title,
