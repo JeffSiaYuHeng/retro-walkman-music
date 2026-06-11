@@ -157,3 +157,43 @@ Triggered after each successful download (debounced 2s).
   "addedAt": 1718123456789
 }
 ```
+
+## Auto Push to GitHub
+
+After `generate-songs-json.js` completes, the system automatically:
+
+1. `git add songs/ songs.json`
+2. `git commit -m "Auto: add new songs (X files)"`
+3. `git push`
+
+This ensures the CDN URLs in `songs.json` are always up-to-date.
+
+### Manual Push
+
+Click "Push to GitHub" button in the UI, or:
+
+```bash
+POST /api/push
+```
+
+### Prerequisites
+
+- Git repo must be configured with remote
+- SSH key or credential helper must be set up
+- On Windows: use Git Credential Manager
+
+### Remote Server Flow
+
+```
+Your Device (phone/laptop)
+    │
+    ▼ ngrok or direct IP
+Old Windows Laptop
+    ├─ python3 app.py (Flask server)
+    ├─ Download song → songs/
+    ├─ generate-songs-json.js → songs.json
+    └─ git push → GitHub
+    │
+    ▼ jsDelivr CDN
+songs.json URLs point to latest songs
+```

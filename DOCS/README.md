@@ -9,6 +9,7 @@ A web-based music download application that searches and downloads songs from Yo
 - [Frontend Design](./frontend.md) — UI/UX components and interactions
 - [Download Workflow](./workflow.md) — Download process and fallback logic
 - [Setup Guide](./setup.md) — Installation and configuration
+- [Remote Server Setup](./remote-setup.md) — Deploy on Windows laptop with SSH
 
 ## Overview
 
