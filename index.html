@@ -373,12 +373,53 @@
     transition:all .2s;
     cursor:default;
     animation:fadeDown .3s ease both;
+    position:relative;
   }
   .song-card:hover{
     border-color:rgba(139,92,246,.3);
     transform:translateY(-2px);
     box-shadow:0 4px 16px rgba(0,0,0,.3);
   }
+  .song-actions{
+    position:absolute;top:8px;right:8px;
+    display:flex;gap:4px;
+    opacity:0;transition:opacity .2s;
+    z-index:10;
+  }
+  .song-card:hover .song-actions{opacity:1}
+  .song-action-btn{
+    width:28px;height:28px;border-radius:6px;
+    border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;transition:all .15s;
+    backdrop-filter:blur(8px);
+  }
+  .song-action-btn.rename{background:rgba(139,92,246,.8);color:#fff}
+  .song-action-btn.rename:hover{background:var(--accent);transform:scale(1.1)}
+  .song-action-btn.delete{background:rgba(239,68,68,.8);color:#fff}
+  .song-action-btn.delete:hover{background:var(--red);transform:scale(1.1)}
+  .rename-input{
+    width:100%;
+    background:var(--bg);
+    border:2px solid var(--accent);
+    border-radius:6px;
+    padding:4px 8px;
+    font-size:12px;color:var(--text);
+    font-family:'Inter',sans-serif;
+    outline:none;
+    margin-bottom:4px;
+  }
+  .rename-actions{display:flex;gap:4px}
+  .rename-actions button{
+    flex:1;border:none;border-radius:4px;
+    padding:4px 0;font-size:10px;font-weight:600;
+    cursor:pointer;font-family:'Inter',sans-serif;
+    transition:all .15s;
+  }
+  .rename-actions .r-save{background:var(--accent);color:#fff}
+  .rename-actions .r-save:hover{background:var(--accent2)}
+  .rename-actions .r-cancel{background:var(--card2);color:var(--text)}
+  .rename-actions .r-cancel:hover{background:var(--border)}
   .song-cover{
     width:100%;aspect-ratio:1;
     background:var(--card2);
@@ -556,6 +597,7 @@
   <div class="tab-panel" id="panel-library">
     <div class="library-header">
       <input type="text" class="search-box" id="searchBox" placeholder="Search songs..." oninput="filterLibrary()">
+      <button class="btn btn-primary" style="padding:10px 14px;font-size:12px" onclick="enrichAll()" id="enrichBtn">✨ Enrich</button>
     </div>
     <div class="library-count" id="libraryCount">Loading...</div>
     <div class="song-grid" id="songGrid"></div>
@@ -577,6 +619,18 @@
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- Confirm Modal -->
+<div class="confirm-overlay" id="confirmModal">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMsg">Are you sure?</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const queue = document.getElementById('queue');
@@ -901,20 +955,23 @@ function renderLibrary(songs) {
 
   grid.innerHTML = songs.map((s, i) => {
     const name = s.replace(/\.mp3$/i, '');
-    // Parse "Artist - Title" format
     const parts = name.split(' - ');
     const artist = parts.length > 1 ? parts[0].trim() : '';
     const title = parts.length > 1 ? parts.slice(1).join(' - ').trim() : name;
     const coverUrl = `/songs/${encodeURIComponent(name)}.jpg`;
 
     return `
-      <div class="song-card" style="animation-delay:${Math.min(i * 30, 300)}ms">
+      <div class="song-card" id="card-${i}" style="animation-delay:${Math.min(i * 30, 300)}ms">
+        <div class="song-actions">
+          <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" title="Rename">✏</button>
+          <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" title="Delete">🗑</button>
+        </div>
         <div class="song-cover">
           <img src="${coverUrl}" alt="${esc(title)}"
                onerror="this.parentElement.innerHTML='<div class=no-cover>🎵</div>'"
                loading="lazy">
         </div>
-        <div class="song-info">
+        <div class="song-info" id="info-${i}">
           <div class="song-name" title="${esc(title)}">${esc(title)}</div>
           ${artist ? `<div class="song-artist" title="${esc(artist)}">${esc(artist)}</div>` : ''}
         </div>
@@ -938,6 +995,106 @@ function esc(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+// ── Rename Song ────────────────────────────
+function startRename(idx, filename) {
+  const info = document.getElementById('info-' + idx);
+  if (!info) return;
+  const currentName = filename.replace(/\.mp3$/i, '');
+  info.innerHTML = `
+    <input type="text" class="rename-input" id="renameInput-${idx}" value="${esc(currentName)}">
+    <div class="rename-actions">
+      <button class="r-save" onclick="saveRename(${idx}, '${esc(filename)}')">Save</button>
+      <button class="r-cancel" onclick="loadSongs()">Cancel</button>
+    </div>
+  `;
+  const input = document.getElementById('renameInput-' + idx);
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveRename(idx, filename);
+    if (e.key === 'Escape') loadSongs();
+  });
+}
+
+async function saveRename(idx, oldFilename) {
+  const input = document.getElementById('renameInput-' + idx);
+  if (!input) return;
+  const newName = input.value.trim();
+  if (!newName) return;
+
+  try {
+    const res = await fetch('/api/rename', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({old_name: oldFilename, new_name: newName + '.mp3'}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast('Renamed successfully', 'success');
+    loadSongs();
+  } catch(e) {
+    showToast('Rename failed: ' + e.message, 'error');
+  }
+}
+
+// ── Delete Song ─────────────────────────────
+function confirmDelete(filename) {
+  const modal = document.getElementById('confirmModal');
+  document.getElementById('confirmTitle').textContent = 'Delete Song';
+  document.getElementById('confirmMsg').textContent = `Delete "${filename.replace(/\.mp3$/i, '')}"? This cannot be undone.`;
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = 'Delete';
+  btn.className = 'btn btn-danger';
+  btn.onclick = () => {
+    closeConfirm();
+    deleteSong(filename);
+  };
+  modal.classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeConfirm();
+});
+
+async function deleteSong(filename) {
+  try {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name: filename}),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast('Deleted: ' + filename.replace(/\.mp3$/i, ''), 'success');
+    loadSongs();
+  } catch(e) {
+    showToast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+// ── Enrich Metadata ─────────────────────────
+async function enrichAll() {
+  const btn = document.getElementById('enrichBtn');
+  btn.disabled = true;
+  btn.textContent = '✨ Enriching...';
+  try {
+    const res = await fetch('/api/enrich-all', {method: 'POST'});
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast(`Enriched ${data.enriched} songs`, 'success');
+    loadSongs();
+  } catch(e) {
+    showToast('Enrich failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Enrich';
+  }
 }
 
 // ── Init ─────────────────────────────────────

@@ -477,6 +477,195 @@ def check_duplicate():
     return jsonify({"duplicates": duplicates})
 
 
+@app.route("/api/enrich", methods=["POST"])
+def enrich_song():
+    """Fetch artist/album info for a song using ytmusicapi."""
+    data = request.get_json()
+    filename = data.get("filename", "").strip()
+    if not filename:
+        return jsonify({"error": "filename is required"}), 400
+
+    name = filename.replace('.mp3', '')
+    parts = name.split(' - ', 1)
+    query = parts[1].strip() if len(parts) > 1 else name.strip()
+
+    try:
+        from ytmusicapi import YTMusic
+        ytm = YTMusic()
+        results = ytm.search(query, filter="songs", limit=5)
+
+        if not results:
+            return jsonify({"error": "No results found"}), 404
+
+        best = results[0]
+        artists = [a.get('name', '') for a in best.get('artists', [])]
+        album = best.get('album', {})
+        album_name = album.get('name', '') if isinstance(album, dict) else ''
+        duration = best.get('duration_seconds', 0)
+        thumbnails = best.get('thumbnails', [])
+        thumb_url = thumbnails[-1].get('url', '') if thumbnails else ''
+
+        return jsonify({
+            "title": best.get('title', ''),
+            "artists": artists,
+            "artist": ', '.join(artists),
+            "album": album_name,
+            "duration": duration,
+            "thumbnail": thumb_url,
+            "videoId": best.get('videoId', ''),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/enrich-all", methods=["POST"])
+def enrich_all():
+    """Batch enrich all songs missing artist info."""
+    SONGS_DIR.mkdir(exist_ok=True)
+    files = [f for f in os.listdir(SONGS_DIR) if f.lower().endswith('.mp3')]
+    results = []
+
+    try:
+        from ytmusicapi import YTMusic
+        ytm = YTMusic()
+    except Exception as e:
+        return jsonify({"error": f"YTMusic init failed: {e}"}), 500
+
+    for f in files:
+        name = f.replace('.mp3', '')
+        parts = name.split(' - ', 1)
+        # Only enrich files with generic/missing artist
+        artist = parts[0].strip() if len(parts) > 1 else ''
+        query = parts[1].strip() if len(parts) > 1 else name.strip()
+
+        # Skip if already has a real artist name (not NA or uploader)
+        if artist and artist != 'NA' and len(artist) < 60:
+            continue
+
+        try:
+            search_results = ytm.search(query, filter="songs", limit=3)
+            if not search_results:
+                continue
+
+            best = search_results[0]
+            artists = [a.get('name', '') for a in best.get('artists', [])]
+            new_artist = ', '.join(artists) if artists else artist
+            new_title = best.get('title', '') or query
+            album = best.get('album', {})
+            album_name = album.get('name', '') if isinstance(album, dict) else ''
+
+            # Build new filename
+            clean_artist = re.sub(r'[<>:"/\\|*]', '', new_artist).strip()
+            clean_title = re.sub(r'[<>:"/\\|*]', '', new_title).strip()
+            if clean_artist and clean_title:
+                new_name = f"{clean_artist} - {clean_title}.mp3"
+            else:
+                continue
+
+            if new_name == f:
+                continue
+
+            old_path = SONGS_DIR / f
+            new_path = SONGS_DIR / new_name
+            if new_path.exists():
+                continue
+
+            # Rename MP3
+            old_path.rename(new_path)
+
+            # Rename cover
+            for ext in ['.jpg', '.webp', '.png']:
+                old_cover = SONGS_DIR / (name + ext)
+                if old_cover.exists():
+                    new_cover = SONGS_DIR / (new_name.rsplit('.', 1)[0] + ext)
+                    old_cover.rename(new_cover)
+                    break
+
+            results.append({"old": f, "new": new_name, "artist": new_artist, "album": album_name})
+
+        except Exception:
+            continue
+
+    if results:
+        run_generate_json()
+
+    return jsonify({"enriched": len(results), "results": results})
+
+
+@app.route("/api/rename", methods=["POST"])
+def rename_song():
+    """Rename a song file."""
+    data = request.get_json()
+    old_name = data.get("old_name", "").strip()
+    new_name = data.get("new_name", "").strip()
+
+    if not old_name or not new_name:
+        return jsonify({"error": "old_name and new_name are required"}), 400
+
+    # Ensure .mp3 extension
+    if not new_name.lower().endswith(".mp3"):
+        new_name += ".mp3"
+
+    old_mp3 = SONGS_DIR / old_name
+    new_mp3 = SONGS_DIR / new_name
+
+    if not old_mp3.exists():
+        return jsonify({"error": "File not found"}), 404
+
+    if new_mp3.exists() and old_mp3 != new_mp3:
+        return jsonify({"error": "A file with that name already exists"}), 409
+
+    try:
+        # Rename MP3
+        old_mp3.rename(new_mp3)
+
+        # Rename cover image if exists
+        for ext in ['.jpg', '.webp', '.png']:
+            old_cover = SONGS_DIR / (old_name.rsplit('.', 1)[0] + ext)
+            if old_cover.exists():
+                new_cover = SONGS_DIR / (new_name.rsplit('.', 1)[0] + ext)
+                old_cover.rename(new_cover)
+                break
+
+        # Regenerate songs.json
+        run_generate_json()
+        return jsonify({"status": "ok", "new_name": new_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/delete", methods=["POST"])
+def delete_song():
+    """Delete a song file."""
+    data = request.get_json()
+    name = data.get("name", "").strip()
+
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+
+    mp3_path = SONGS_DIR / name
+
+    if not mp3_path.exists():
+        return jsonify({"error": "File not found"}), 404
+
+    try:
+        # Delete MP3
+        mp3_path.unlink()
+
+        # Delete cover image if exists
+        for ext in ['.jpg', '.webp', '.png']:
+            cover = SONGS_DIR / (name.rsplit('.', 1)[0] + ext)
+            if cover.exists():
+                cover.unlink()
+                break
+
+        # Regenerate songs.json
+        run_generate_json()
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/generate", methods=["POST"])
 def generate():
     run_generate_json()
