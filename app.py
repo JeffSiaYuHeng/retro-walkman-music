@@ -175,7 +175,7 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
 
                 # Sanitize filename - remove invalid chars but keep Unicode
                 # Remove characters that are invalid in Windows filenames
-                clean_name = re.sub(r'[<>:"/\\|*]', '', clean_name).strip()
+                clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name).strip()
                 if not clean_name:
                     clean_name = video_id
 
