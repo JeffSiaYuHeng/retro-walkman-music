@@ -219,6 +219,24 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                     artist = raw_artist
                     album = info.get('album') or ''
 
+                # Fetch external metadata (iTunes -> Deezer -> MusicBrainz)
+                # ytmusicapi is primary; external APIs fill gaps and provide cover
+                update_task(task_id, message="Fetching metadata from external APIs...")
+                youtube_thumb = info.get('thumbnail', '')
+                ext_meta = fetch_external_metadata(title, artist)
+
+                # Merge: prefer ytmusicapi, fill gaps from external
+                if not title or title == raw_title:
+                    title = ext_meta.get("title") or title
+                if not artist or artist == raw_artist:
+                    artist = ext_meta.get("artist") or artist
+                if not album:
+                    album = ext_meta.get("album") or album
+                track = ext_meta.get("track") or info.get('track_number') or info.get('playlist_index') or 0
+                year = ext_meta.get("year") or info.get('release_year') or info.get('upload_date', '')[:4] or ''
+                genre = ext_meta.get("genre") or info.get('genre') or ''
+                cover_url = ext_meta.get("cover") or youtube_thumb
+
                 # Build clean filename
                 if artist and title:
                     clean_name = f"{artist} - {title}"
@@ -247,12 +265,14 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                     tmp_jpg.rename(final_jpg)
 
                 # Write ID3 metadata tags
-                yt_track = info.get('track_number') or info.get('playlist_index') or 0
-                yt_year = info.get('release_year') or info.get('upload_date', '')[:4] or ''
-                yt_genre = info.get('genre') or ''
                 if final_mp3.exists():
                     write_id3_tags(final_mp3, title=title, artist=artist,
-                                   album=album, track=yt_track, year=yt_year, genre=yt_genre)
+                                   album=album, track=track, year=year, genre=genre)
+
+                # Download and embed album cover
+                if cover_url:
+                    update_task(task_id, message="Downloading album cover...")
+                    download_and_embed_cover(cover_url, f"{clean_name}.mp3")
 
                 update_task(task_id, message=f"Saved as: {clean_name}.{ext}")
             except json.JSONDecodeError:
@@ -572,8 +592,8 @@ def check_duplicate():
     return jsonify({"duplicates": duplicates})
 
 
-def get_itunes_cover(title: str, artist: str = "") -> str | None:
-    """Search iTunes for album cover. Returns cover URL or None."""
+def get_itunes_metadata(title: str, artist: str = "") -> dict | None:
+    """Search iTunes for album cover + metadata. Returns dict or None."""
     try:
         import urllib.request
         import urllib.parse
@@ -597,7 +617,17 @@ def get_itunes_cover(title: str, artist: str = "") -> str | None:
         for r in results:
             art_url = r.get("artworkUrl100", "")
             if art_url:
-                return art_url.replace("100x100", "600x600")
+                release_date = r.get("releaseDate", "")
+                year = release_date[:4] if release_date else ""
+                return {
+                    "cover": art_url.replace("100x100", "600x600"),
+                    "title": r.get("trackName", ""),
+                    "artist": r.get("artistName", ""),
+                    "album": r.get("collectionName", ""),
+                    "track": r.get("trackNumber", 0),
+                    "year": year,
+                    "genre": r.get("primaryGenreName", ""),
+                }
 
         return None
     except Exception as e:
@@ -605,8 +635,8 @@ def get_itunes_cover(title: str, artist: str = "") -> str | None:
         return None
 
 
-def get_deezer_cover(title: str, artist: str = "") -> str | None:
-    """Search Deezer for album cover. Returns cover URL or None."""
+def get_deezer_metadata(title: str, artist: str = "") -> dict | None:
+    """Search Deezer for album cover + metadata. Returns dict or None."""
     try:
         import urllib.request
         import urllib.parse
@@ -623,7 +653,17 @@ def get_deezer_cover(title: str, artist: str = "") -> str | None:
             album = item.get("album", {})
             cover = album.get("cover_xl") or album.get("cover_big") or album.get("cover", "")
             if cover:
-                return cover
+                release_date = item.get("release_date", "")
+                year = release_date[:4] if release_date else ""
+                return {
+                    "cover": cover,
+                    "title": item.get("title", ""),
+                    "artist": item.get("artist", {}).get("name", ""),
+                    "album": album.get("title", ""),
+                    "track": item.get("track_position", 0),
+                    "year": year,
+                    "genre": "",
+                }
 
         return None
     except Exception as e:
@@ -631,8 +671,8 @@ def get_deezer_cover(title: str, artist: str = "") -> str | None:
         return None
 
 
-def get_musicbrainz_cover(title: str, artist: str = "") -> str | None:
-    """Search MusicBrainz + Cover Art Archive for album cover. Returns cover URL or None."""
+def get_musicbrainz_metadata(title: str, artist: str = "") -> dict | None:
+    """Search MusicBrainz + Cover Art Archive for album cover + metadata. Returns dict or None."""
     try:
         import urllib.request
         import urllib.parse
@@ -665,7 +705,19 @@ def get_musicbrainz_cover(title: str, artist: str = "") -> str | None:
                         headers={"User-Agent": "RetroWalkmanMusic/1.0"})
                     with urllib.request.urlopen(check_req, timeout=3) as check:
                         if check.status == 200:
-                            return cover_url
+                            artists = [a.get("name", "") for a in rec.get("artist-credit", [])]
+                            media = release.get("media", [{}])
+                            tracks = media[0].get("tracks", []) if media else []
+                            track_num = tracks[0].get("number", 0) if tracks else 0
+                            return {
+                                "cover": cover_url,
+                                "title": rec.get("title", ""),
+                                "artist": ", ".join(artists),
+                                "album": release.get("title", ""),
+                                "track": track_num,
+                                "year": release.get("date", "")[:4] if release.get("date") else "",
+                                "genre": "",
+                            }
                 except Exception:
                     continue
 
@@ -675,22 +727,39 @@ def get_musicbrainz_cover(title: str, artist: str = "") -> str | None:
         return None
 
 
+def fetch_external_metadata(title: str, artist: str = "") -> dict:
+    """Fetch metadata from external APIs: iTunes -> Deezer -> MusicBrainz.
+    Returns dict with cover, title, artist, album, track, year, genre.
+    Empty string values indicate no data found."""
+    result = {"cover": "", "title": "", "artist": "", "album": "", "track": 0, "year": "", "genre": ""}
+
+    # iTunes (best metadata quality)
+    meta = get_itunes_metadata(title, artist)
+    if meta:
+        print(f"[External] Found from iTunes: {title}")
+        return meta
+
+    # Deezer
+    meta = get_deezer_metadata(title, artist)
+    if meta:
+        print(f"[External] Found from Deezer: {title}")
+        return meta
+
+    # MusicBrainz
+    meta = get_musicbrainz_metadata(title, artist)
+    if meta:
+        print(f"[External] Found from MusicBrainz: {title}")
+        return meta
+
+    print(f"[External] No results found for: {title}")
+    return result
+
+
 def get_album_cover(title: str, artist: str = "", youtube_thumb: str = "") -> str:
     """Get album cover with fallback: iTunes -> Deezer -> MusicBrainz -> YouTube thumbnail."""
-    cover = get_itunes_cover(title, artist)
-    if cover:
-        print(f"[Cover] Found from iTunes: {title}")
-        return cover
-
-    cover = get_deezer_cover(title, artist)
-    if cover:
-        print(f"[Cover] Found from Deezer: {title}")
-        return cover
-
-    cover = get_musicbrainz_cover(title, artist)
-    if cover:
-        print(f"[Cover] Found from MusicBrainz: {title}")
-        return cover
+    meta = fetch_external_metadata(title, artist)
+    if meta.get("cover"):
+        return meta["cover"]
 
     if youtube_thumb:
         print(f"[Cover] Using YouTube thumbnail: {title}")
@@ -729,7 +798,7 @@ def download_and_embed_cover(cover_url: str, mp3_filename: str) -> bool:
 
 @app.route("/api/enrich", methods=["POST"])
 def enrich_song():
-    """Fetch artist/album info for a song using ytmusicapi."""
+    """Fetch artist/album info for a song using ytmusicapi + external APIs."""
     data = request.get_json()
     filename = data.get("filename", "").strip()
     if not filename:
@@ -757,7 +826,15 @@ def enrich_song():
 
         title = best.get('title', '')
         artist = ', '.join(artists)
-        cover_url = get_album_cover(title, artist, youtube_thumb)
+
+        # Fetch external metadata and merge
+        ext_meta = fetch_external_metadata(title, artist)
+        if not album_name:
+            album_name = ext_meta.get("album", "")
+        track = ext_meta.get("track") or 0
+        year = ext_meta.get("year") or ""
+        genre = ext_meta.get("genre") or ""
+        cover_url = ext_meta.get("cover") or youtube_thumb
 
         if cover_url:
             download_and_embed_cover(cover_url, filename)
@@ -765,7 +842,8 @@ def enrich_song():
         # Write ID3 metadata tags
         mp3_path = SONGS_DIR / filename
         if mp3_path.exists():
-            write_id3_tags(mp3_path, title=title, artist=artist, album=album_name)
+            write_id3_tags(mp3_path, title=title, artist=artist,
+                           album=album_name, track=track, year=year, genre=genre)
 
         run_generate_json()
 
@@ -820,6 +898,17 @@ def enrich_all():
             new_title = best.get('title', '') or query
             album = best.get('album', {})
             album_name = album.get('name', '') if isinstance(album, dict) else ''
+            thumbnails = best.get('thumbnails', [])
+            youtube_thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+
+            # Fetch external metadata and merge
+            ext_meta = fetch_external_metadata(new_title, new_artist)
+            if not album_name:
+                album_name = ext_meta.get("album", "")
+            track = ext_meta.get("track") or 0
+            year = ext_meta.get("year") or ""
+            genre = ext_meta.get("genre") or ""
+            cover_url = ext_meta.get("cover") or youtube_thumb
 
             # Build new filename
             clean_artist = re.sub(r'[<>:"/\\|*]', '', new_artist).strip()
@@ -830,10 +919,13 @@ def enrich_all():
                 continue
 
             if new_name == f:
-                # Still write ID3 tags even if filename doesn't change
+                # Still write ID3 tags + cover even if filename doesn't change
                 mp3_path = SONGS_DIR / f
                 if mp3_path.exists():
-                    write_id3_tags(mp3_path, title=new_title, artist=new_artist, album=album_name)
+                    write_id3_tags(mp3_path, title=new_title, artist=new_artist,
+                                   album=album_name, track=track, year=year, genre=genre)
+                    if cover_url:
+                        download_and_embed_cover(cover_url, f)
                 results.append({"old": f, "new": f, "artist": new_artist, "album": album_name})
                 continue
 
@@ -853,8 +945,11 @@ def enrich_all():
                     old_cover.rename(new_cover)
                     break
 
-            # Write ID3 tags
-            write_id3_tags(new_path, title=new_title, artist=new_artist, album=album_name)
+            # Write ID3 tags + download cover
+            write_id3_tags(new_path, title=new_title, artist=new_artist,
+                           album=album_name, track=track, year=year, genre=genre)
+            if cover_url:
+                download_and_embed_cover(cover_url, new_name)
 
             results.append({"old": f, "new": new_name, "artist": new_artist, "album": album_name})
 
