@@ -1351,6 +1351,7 @@ function renderLibrary(songs) {
           <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" title="Rename">&#9998;</button>
           <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" title="Delete">&#128465;</button>
         </div>
+        <button class="play-overlay" onclick="playSongFile(${i}, '${esc(s)}')" title="Play">\u25B6</button>
         <div class="song-cover">
           <img src="${coverUrl}" alt="${esc(title)}"
                onerror="this.parentElement.innerHTML='<div class=no-cover>&#127925;</div>'"
