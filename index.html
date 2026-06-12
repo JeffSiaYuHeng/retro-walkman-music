@@ -829,6 +829,59 @@
     .stat{font-size:10px;padding:6px 0}
     .btn-ghost{padding:8px 12px;font-size:13px}
   }
+
+  /* ── Play Button ───────────────────────── */
+  .play-overlay{
+    position:absolute;bottom:10px;right:10px;
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(0,102,204,.9);color:#fff;
+    border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    opacity:0;transform:translateY(6px);
+    transition:all .2s;z-index:10;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+  }
+  .song-card:hover .play-overlay{opacity:1;transform:translateY(0)}
+  .play-overlay:hover{background:var(--primary-focus);transform:scale(1.08) !important}
+  .play-overlay.playing{background:rgba(255,59,48,.9);opacity:1;transform:translateY(0)}
+
+  /* ── Mini Player Bar ───────────────────── */
+  .mini-player{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:rgba(0,0,0,.92);backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid rgba(255,255,255,.1);
+    padding:0;transform:translateY(100%);
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .mini-player.show{transform:translateY(0)}
+  .mini-player-inner{
+    max-width:980px;margin:0 auto;
+    display:flex;align-items:center;gap:14px;
+    padding:10px 20px;
+  }
+  .mini-player-cover{
+    width:44px;height:44px;border-radius:8px;
+    object-fit:cover;flex-shrink:0;
+    background:#222;
+  }
+  .mini-player-info{flex:1;min-width:0}
+  .mini-player-title{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini-player-artist{font-size:12px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini-player-controls{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .mini-player-btn{
+    background:none;border:none;color:#fff;cursor:pointer;
+    font-size:18px;padding:6px;opacity:.7;transition:opacity .2s;
+  }
+  .mini-player-btn:hover{opacity:1}
+  .mini-player-btn.play-btn{font-size:22px;opacity:1;width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center}
+  .mini-player-btn.play-btn:hover{background:var(--primary-focus)}
+  .mini-player-progress{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.1);cursor:pointer}
+  .mini-player-progress-fill{height:100%;background:var(--primary);width:0%;transition:width .3s linear}
+  .mini-player-time{font-size:11px;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:70px;text-align:right}
+  @media(max-width:600px){.mini-player-time{display:none}.mini-player-cover{width:36px;height:36px}}
+
 </style>
 </head>
 <body>
@@ -1431,6 +1484,99 @@ async function enrichAll() {
 
 // ── Init ─────────────────────────────────────
 loadSongs();
+
+// ── Mini Audio Player ─────────────────────
+var audio = new Audio();
+var currentPlayIndex = -1;
+
+function playSongFile(index, filename) {
+  if (currentPlayIndex === index && !audio.paused) {
+    audio.pause();
+    return;
+  }
+  if (currentPlayIndex >= 0) {
+    var prevBtn = document.querySelector('.play-overlay.playing');
+    if (prevBtn) { prevBtn.classList.remove('playing'); prevBtn.textContent = '\u25B6'; }
+  }
+  currentPlayIndex = index;
+  audio.src = '/songs/' + encodeURIComponent(filename);
+  audio.play();
+  var btn = document.querySelector('#card-' + index + ' .play-overlay');
+  if (btn) { btn.classList.add('playing'); btn.textContent = '\u23F8'; }
+  var parts = filename.replace(/\.mp3$/i, '').split(' - ');
+  var artist = parts.length > 1 ? parts[0].trim() : '';
+  var title = parts.length > 1 ? parts.slice(1).join(' - ').trim() : filename;
+  document.getElementById('miniTitle').textContent = title;
+  document.getElementById('miniArtist').textContent = artist || 'Unknown';
+  document.getElementById('miniCover').src = '/songs/' + encodeURIComponent(filename.replace(/\.mp3$/i, '.jpg'));
+  document.getElementById('miniCover').onerror = function() { this.src = ''; };
+  document.getElementById('miniPlayer').classList.add('show');
+  document.getElementById('miniPlay').textContent = '\u23F8';
+}
+
+audio.addEventListener('ended', function() {
+  if (currentPlayIndex < allSongs.length - 1) {
+    playSongFile(currentPlayIndex + 1, allSongs[currentPlayIndex + 1]);
+  }
+});
+
+audio.addEventListener('pause', function() {
+  document.getElementById('miniPlay').textContent = '\u25B6';
+  var btn = document.querySelector('#card-' + currentPlayIndex + ' .play-overlay');
+  if (btn) { btn.classList.remove('playing'); btn.textContent = '\u25B6'; }
+});
+
+audio.addEventListener('play', function() {
+  document.getElementById('miniPlay').textContent = '\u23F8';
+});
+
+setInterval(function() {
+  if (!audio.duration) return;
+  document.getElementById('miniProgressFill').style.width = (audio.currentTime / audio.duration * 100) + '%';
+  document.getElementById('miniTime').textContent = fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration);
+}, 500);
+
+function fmtTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  return Math.floor(s / 60) + ':' + (Math.floor(s % 60) < 10 ? '0' : '') + Math.floor(s % 60);
+}
+
+document.getElementById('miniPlay').addEventListener('click', function() {
+  if (!audio.src) return;
+  audio.paused ? audio.play() : audio.pause();
+});
+document.getElementById('miniPrev').addEventListener('click', function() {
+  if (currentPlayIndex > 0) playSongFile(currentPlayIndex - 1, allSongs[currentPlayIndex - 1]);
+});
+document.getElementById('miniNext').addEventListener('click', function() {
+  if (currentPlayIndex < allSongs.length - 1) playSongFile(currentPlayIndex + 1, allSongs[currentPlayIndex + 1]);
+});
+document.getElementById('miniProgressWrap').addEventListener('click', function(e) {
+  if (!audio.duration) return;
+  audio.currentTime = ((e.clientX - this.getBoundingClientRect().left) / this.getBoundingClientRect().width) * audio.duration;
+});
+
 </script>
+
+<!-- Mini Player -->
+<div class="mini-player" id="miniPlayer">
+  <div class="mini-player-progress" id="miniProgressWrap">
+    <div class="mini-player-progress-fill" id="miniProgressFill"></div>
+  </div>
+  <div class="mini-player-inner">
+    <img class="mini-player-cover" id="miniCover" src="" alt="">
+    <div class="mini-player-info">
+      <div class="mini-player-title" id="miniTitle">-</div>
+      <div class="mini-player-artist" id="miniArtist">-</div>
+    </div>
+    <div class="mini-player-controls">
+      <button class="mini-player-btn" id="miniPrev" title="Previous">⏮</button>
+      <button class="mini-player-btn play-btn" id="miniPlay" title="Play/Pause">▶</button>
+      <button class="mini-player-btn" id="miniNext" title="Next">⏭</button>
+    </div>
+    <div class="mini-player-time" id="miniTime">0:00 / 0:00</div>
+  </div>
+</div>
+
 </body>
 </html>
