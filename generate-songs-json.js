@@ -45,10 +45,16 @@ async function generateSongs() {
         coverUrl = `https://cdn.jsdelivr.net/gh/${repo}@${branch}/songs/${encodeURIComponent(coverFileName)}`;
       }
 
+      // Fallback: parse artist/title from filename (format: "Artist - Title")
+      const fileName = file.replace(/\.mp3$/i, "");
+      const dashIdx = fileName.indexOf(" - ");
+      const parsedArtist = dashIdx > 0 ? fileName.substring(0, dashIdx).trim() : "";
+      const parsedTitle = dashIdx > 0 ? fileName.substring(dashIdx + 3).trim() : fileName;
+
       songs.push({
         id: file.replace(/\.mp3$/i, ""),
-        title: common.title || file.replace(".mp3", ""),
-        artist: common.artist || "Unknown Artist",
+        title: common.title || parsedTitle,
+        artist: common.artist || parsedArtist || "Unknown Artist",
         album: common.album || "Unknown Album",
         duration: format.duration ? Math.round(format.duration) : 0, // seconds
         coverUrl,

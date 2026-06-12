@@ -90,6 +90,46 @@ def try_ytmdl(query: str, input_type: str, task_id: str) -> bool:
         return False
 
 
+def clean_youtube_title(title: str) -> str:
+    """Strip YouTube noise (Official Video, MV, Lyric Video, etc.) from a title."""
+    patterns = [
+        r'\(?\s*Official\s+(?:Music\s+)?(?:Video|MV|Audio)\s*\)?',
+        r'\(?\s*(?:Lyric|Lyrics)\s*(?:Video)?\s*\)?',
+        r'\(?\s*Music\s+Video\s*\)?',
+        r'\【[^】]*Official[^】]*\】',
+        r'\[[^\]]*Official[^\]]*\]',
+        r'\s*-\s*Official\s+(?:Music\s+)?(?:Video|MV|Audio)\s*$',
+    ]
+    for p in patterns:
+        title = re.sub(p, '', title, flags=re.IGNORECASE)
+    return title.strip()
+
+
+def lookup_song_metadata(title: str) -> dict | None:
+    """Use ytmusicapi to look up real song metadata from a YouTube title.
+    Returns dict with keys: title, artist, album  or None on failure."""
+    try:
+        from ytmusicapi import YTMusic
+        ytm = YTMusic()
+        # Clean the title first to improve search accuracy
+        cleaned = clean_youtube_title(title)
+        results = ytm.search(cleaned, filter="songs", limit=3)
+        if not results:
+            return None
+        best = results[0]
+        artists = [a.get('name', '') for a in best.get('artists', [])]
+        album_obj = best.get('album', {})
+        album_name = album_obj.get('name', '') if isinstance(album_obj, dict) else ''
+        return {
+            'title': best.get('title', '') or cleaned,
+            'artist': ', '.join(artists) if artists else '',
+            'album': album_name or '',
+        }
+    except Exception as e:
+        print(f"[lookup_song_metadata] Failed: {e}")
+        return None
+
+
 def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
     """Fallback: use yt-dlp directly with thumbnail. Returns True on success."""
     update_task(task_id, method="yt-dlp", message="Retrying with yt-dlp...")
@@ -161,9 +201,23 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
             try:
                 info = json.loads(json_output)
                 video_id = info.get('id', '')
-                title = info.get('title', '')
-                artist = info.get('artist') or info.get('uploader') or ''
+                raw_title = info.get('title', '')
+                raw_artist = info.get('artist') or info.get('uploader') or ''
                 ext = 'mp3'
+
+                # Use ytmusicapi to look up real song metadata
+                update_task(task_id, message="Looking up real song info...")
+                lookup = lookup_song_metadata(raw_title)
+
+                if lookup:
+                    title = lookup['title']
+                    artist = lookup['artist']
+                    album = lookup['album']
+                else:
+                    # Fallback: strip YouTube noise, use raw uploader as artist
+                    title = clean_youtube_title(raw_title)
+                    artist = raw_artist
+                    album = info.get('album') or ''
 
                 # Build clean filename
                 if artist and title:
@@ -174,7 +228,6 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                     clean_name = video_id
 
                 # Sanitize filename - remove invalid chars but keep Unicode
-                # Remove characters that are invalid in Windows filenames
                 clean_name = re.sub(r'[<>:"/\\|?*]', '', clean_name).strip()
                 if not clean_name:
                     clean_name = video_id
@@ -194,15 +247,12 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                     tmp_jpg.rename(final_jpg)
 
                 # Write ID3 metadata tags
-                yt_title = info.get('title', '')
-                yt_artist = info.get('artist') or info.get('uploader') or ''
-                yt_album = info.get('album') or ''
                 yt_track = info.get('track_number') or info.get('playlist_index') or 0
                 yt_year = info.get('release_year') or info.get('upload_date', '')[:4] or ''
                 yt_genre = info.get('genre') or ''
-                if final_mp3.exists() and (yt_title or yt_artist):
-                    write_id3_tags(final_mp3, title=yt_title, artist=yt_artist,
-                                   album=yt_album, track=yt_track, year=yt_year, genre=yt_genre)
+                if final_mp3.exists():
+                    write_id3_tags(final_mp3, title=title, artist=artist,
+                                   album=album, track=yt_track, year=yt_year, genre=yt_genre)
 
                 update_task(task_id, message=f"Saved as: {clean_name}.{ext}")
             except json.JSONDecodeError:
@@ -285,6 +335,8 @@ def write_id3_tags(mp3_path: Path, title: str = "", artist: str = "", album: str
             audio.tags.setall('TPE1', [TPE1(encoding=3, text=artist)])
         if album:
             audio.tags.setall('TALB', [TALB(encoding=3, text=album)])
+        else:
+            audio.tags.setall('TALB', [TALB(encoding=3, text='Unknown Album')])
         if track:
             audio.tags.setall('TRCK', [TRCK(encoding=3, text=str(track))])
         if year:
@@ -750,9 +802,12 @@ def enrich_all():
         artist = parts[0].strip() if len(parts) > 1 else ''
         query = parts[1].strip() if len(parts) > 1 else name.strip()
 
-        # Skip if already has a real artist name (not NA or uploader)
-        if artist and artist != 'NA' and len(artist) < 60:
+        # Skip if already has a real artist name (not NA, Unknown, or very long uploader names)
+        if artist and artist not in ('NA', 'Unknown Artist', 'Unknown') and len(artist) < 60:
             continue
+
+        # Clean YouTube noise from query for better search results
+        query = clean_youtube_title(query)
 
         try:
             search_results = ytm.search(query, filter="songs", limit=3)
@@ -775,6 +830,11 @@ def enrich_all():
                 continue
 
             if new_name == f:
+                # Still write ID3 tags even if filename doesn't change
+                mp3_path = SONGS_DIR / f
+                if mp3_path.exists():
+                    write_id3_tags(mp3_path, title=new_title, artist=new_artist, album=album_name)
+                results.append({"old": f, "new": f, "artist": new_artist, "album": album_name})
                 continue
 
             old_path = SONGS_DIR / f
@@ -792,6 +852,9 @@ def enrich_all():
                     new_cover = SONGS_DIR / (new_name.rsplit('.', 1)[0] + ext)
                     old_cover.rename(new_cover)
                     break
+
+            # Write ID3 tags
+            write_id3_tags(new_path, title=new_title, artist=new_artist, album=album_name)
 
             results.append({"old": f, "new": new_name, "artist": new_artist, "album": album_name})
 
