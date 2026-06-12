@@ -149,8 +149,10 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
 
     cmd = [
         YT_DLP,
-        "--js-runtimes", "nodejs",
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github",
         "--ffmpeg-location", FFMPEG_DIR,
+        "--extractor-args", "youtube:player_client=web_creator",
         "-x", "--audio-format", "mp3",
         "--audio-quality", "0",
         "--write-thumbnail",
@@ -512,6 +514,11 @@ def get_task(task_id: str) -> dict:
 @app.route("/")
 def index():
     return send_from_directory(str(BASE_DIR), "index.html")
+
+
+@app.route("/gift")
+def gift():
+    return send_from_directory(str(BASE_DIR / "gift"), "index.html")
 
 
 @app.route("/api/download", methods=["POST"])
