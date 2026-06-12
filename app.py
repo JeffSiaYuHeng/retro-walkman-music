@@ -399,6 +399,22 @@ def _run_download_inner(task_id: str, query: str):
         # Go straight to yt-dlp
         success = try_ytdlp_fallback(query, input_type, task_id)
 
+        # Fallback: if YouTube URL failed, try ytsearch1
+        if not success and input_type == "youtube":
+            update_task(task_id, message="Direct URL failed, trying search...")
+            # Extract title from URL for search - use the URL ID
+            import urllib.parse
+            parsed = urllib.parse.urlparse(query)
+            video_id = None
+            if 'youtu.be' in parsed.hostname:
+                video_id = parsed.path.strip('/')
+            elif 'youtube.com' in parsed.hostname:
+                qs = urllib.parse.parse_qs(parsed.query)
+                video_id = qs.get('v', [None])[0]
+            if video_id:
+                # Try ytsearch with the video ID as query
+                success = try_ytdlp_fallback(f"ytsearch1:{video_id}", "search", task_id)
+
         # Fallback: try ytmdl if yt-dlp failed
         if not success:
             update_task(task_id, message="yt-dlp failed, trying ytmdl...")
