@@ -30,12 +30,17 @@ async function generateSongs() {
       const common = metadata.common;
       const format = metadata.format;
 
-      // Extract cover if available
+      // Check for existing cover image first, then extract from metadata
       let coverUrl = null;
-      if (common.picture && common.picture.length > 0) {
+      const coverFileName = `${file.replace(/\.mp3$/i, "")}.jpg`;
+      const coverPath = path.join(songsDir, coverFileName);
+      
+      if (fs.existsSync(coverPath)) {
+        // Use existing jpg file
+        coverUrl = `https://cdn.jsdelivr.net/gh/${repo}@${branch}/songs/${encodeURIComponent(coverFileName)}`;
+      } else if (common.picture && common.picture.length > 0) {
+        // Extract cover from mp3 metadata if no existing jpg
         const picture = common.picture[0];
-        const coverFileName = `${file.replace(/\.mp3$/i, "")}.jpg`;
-        const coverPath = path.join(songsDir, coverFileName);
         fs.writeFileSync(coverPath, picture.data);
         coverUrl = `https://cdn.jsdelivr.net/gh/${repo}@${branch}/songs/${encodeURIComponent(coverFileName)}`;
       }
