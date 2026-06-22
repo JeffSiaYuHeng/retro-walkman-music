@@ -244,6 +244,46 @@
   }
   .btn-ghost:hover{border-color:var(--ink-muted-48);color:var(--ink)}
 
+  .icon-btn{
+    width:36px;height:36px;
+    border-radius:10px;
+    padding:0;
+    position:relative;
+    flex-shrink:0;
+  }
+  .icon-btn .icon{
+    font-size:16px;
+    line-height:1;
+  }
+  .icon-btn.loading .icon{
+    animation:pulse 1s ease infinite;
+  }
+  [data-tooltip]{
+    position:relative;
+  }
+  [data-tooltip]::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    left:50%;bottom:calc(100% + 8px);
+    transform:translateX(-50%) translateY(4px);
+    background:rgba(0,0,0,.86);
+    color:#fff;
+    padding:6px 8px;
+    border-radius:7px;
+    font-size:12px;
+    line-height:1;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .14s, transform .14s;
+    z-index:400;
+  }
+  [data-tooltip]:hover::after,
+  [data-tooltip]:focus-visible::after{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
   .btn-pill-sm{
     background:var(--primary);color:#fff;
     font-size:14px;font-weight:400;
@@ -252,6 +292,17 @@
   }
   .btn-pill-sm:hover{background:#0077ed}
   .btn-pill-sm:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn-pill-sm .btn-spinner{
+    width:14px;height:14px;
+    border:2px solid rgba(255,255,255,.38);
+    border-top-color:#fff;
+    border-radius:50%;
+    margin-right:8px;
+    display:none;
+    animation:spin .8s linear infinite;
+  }
+  .btn-pill-sm.loading .btn-spinner{display:inline-block}
+  .btn-pill-sm.loading{min-width:112px}
 
   .btn-icon{
     width:44px;height:44px;border-radius:50%;
@@ -343,6 +394,7 @@
     letter-spacing:0;
   }
   .queue-actions{display:flex;gap:8px}
+  .queue-actions .icon-btn{background:var(--canvas)}
 
   /* ── Download Row ──────────────────────── */
   .row{
@@ -353,6 +405,10 @@
     display:flex;align-items:flex-start;gap:16px;
     animation:slideIn .3s cubic-bezier(.22,1,.36,1);
     transition:border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .row.active-row{
+    border-color:rgba(0,102,204,.24);
+    box-shadow:0 10px 30px rgba(0,102,204,.08);
   }
   .row:hover{
     border-color:rgba(0,102,204,.22);
@@ -440,6 +496,23 @@
   .progress-bar .fill.indeterminate{
     width:40% !important;
     animation:indeterminate 1.2s ease infinite;
+  }
+  .row-loading{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .row-loading::before{
+    content:"";
+    width:8px;height:8px;
+    border-radius:50%;
+    background:currentColor;
+    opacity:.75;
+    animation:dotPulse 1s ease infinite;
+  }
+  @keyframes dotPulse{
+    0%,100%{transform:scale(.72);opacity:.38}
+    50%{transform:scale(1);opacity:.9}
   }
   @keyframes indeterminate{
     0%{transform:translateX(-100%)}
@@ -544,6 +617,18 @@
     transform:translateY(-1px);
     box-shadow:0 10px 28px rgba(0,0,0,.06);
   }
+  .song-card.is-playing{
+    border-color:rgba(0,102,204,.55);
+    box-shadow:0 12px 32px rgba(0,102,204,.14);
+  }
+  .song-card.is-playing::before{
+    content:"";
+    position:absolute;
+    inset:0 auto 0 0;
+    width:3px;
+    background:var(--primary);
+    z-index:3;
+  }
   .song-actions{
     position:absolute;top:10px;right:10px;
     display:flex;gap:6px;
@@ -558,6 +643,10 @@
     font-size:13px;transition:background-color .15s, transform .15s, opacity .15s;
     backdrop-filter:blur(8px);
     -webkit-backdrop-filter:blur(8px);
+  }
+  .song-action-btn[data-tooltip]::after,
+  .play-overlay[data-tooltip]::after{
+    bottom:calc(100% + 7px);
   }
   .song-action-btn.rename{background:rgba(0,102,204,.85);color:#fff}
   .song-action-btn.rename:hover{background:var(--primary);transform:scale(0.95)}
@@ -610,11 +699,40 @@
     padding:12px 14px 14px;
     min-height:66px;
   }
+  .song-title-row{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+  }
   .song-info .song-name{
     font-size:14px;font-weight:600;
     letter-spacing:0;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:4px;
+    min-width:0;
+  }
+  .playing-indicator{
+    display:none;
+    align-items:flex-end;
+    gap:2px;
+    height:13px;
+    flex-shrink:0;
+    margin-bottom:4px;
+  }
+  .playing-indicator span{
+    width:3px;
+    height:6px;
+    border-radius:2px;
+    background:var(--primary);
+    animation:wave 1s ease-in-out infinite;
+  }
+  .playing-indicator span:nth-child(2){animation-delay:.16s}
+  .playing-indicator span:nth-child(3){animation-delay:.32s}
+  .song-card.is-playing .playing-indicator{display:inline-flex}
+  @keyframes wave{
+    0%,100%{height:5px}
+    50%{height:13px}
   }
   .song-info .song-artist{
     font-size:12px;color:var(--ink-muted-48);
@@ -802,28 +920,62 @@
     }
     .nav-hamburger{display:flex}
     .global-nav{position:sticky}
-    .hero-headline{font-size:42px}
-    .hero-tagline{font-size:22px}
-    .tile{padding:48px 20px}
+    .hero-headline{font-size:40px}
+    .hero-tagline{font-size:20px}
+    .tile{padding:42px 20px}
     .song-grid{grid-template-columns:repeat(auto-fill, minmax(158px, 1fr));gap:14px}
     .input-row{flex-direction:column}
     .input-row textarea{border-radius:14px}
     .input-row .btn-pill-sm{width:100%;border-radius:14px}
   }
   @media(max-width:640px){
+    body{font-size:15px}
+    .global-nav{padding:0 16px}
+    .global-nav .nav-links.show{
+      align-items:stretch;
+      gap:0;
+    }
+    .main{padding-bottom:88px}
     .hero-headline{font-size:34px}
     .hero-tagline{font-size:17px}
+    .hero-tagline br{display:none}
     .song-grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px}
     .queue-header{flex-direction:column;gap:10px;align-items:flex-start}
-    .queue-actions{width:100%}
-    .queue-actions .btn{flex:1}
+    .queue-actions{
+      width:100%;
+      justify-content:flex-start;
+    }
+    .queue-actions .btn{flex:0 0 44px}
     .row{padding:16px;gap:12px}
     .row-title{white-space:normal}
     .row-msg{white-space:normal}
     .row-remove{min-width:44px;min-height:44px}
     .stat{font-size:11px;padding:8px 0}
-    .library-header{flex-direction:column;gap:10px}
-    .library-header .btn-pill-sm{width:100%}
+    .library-header{
+      position:sticky;
+      top:96px;
+      z-index:20;
+      background:rgba(245,245,247,.92);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      margin:-4px -16px 16px;
+      padding:10px 16px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+    }
+    .library-header .search-box{min-width:0}
+    .library-header .btn-pill-sm{
+      width:44px;
+      height:44px;
+      padding:0;
+      border-radius:12px;
+    }
+    .library-header .btn-pill-sm.loading{
+      min-width:44px;
+    }
+    .library-header .btn-pill-sm .btn-spinner{
+      margin-right:0;
+    }
+    .library-header .btn-label{display:none}
     .song-actions{opacity:1}
     .song-action-btn{width:36px;height:36px}
     .sub-nav{height:auto;min-height:44px;padding:0 16px}
@@ -837,9 +989,12 @@
     .footer{padding:32px 16px 24px}
   }
   @media(max-width:480px){
+    .sub-nav-inner{gap:12px}
+    .sub-nav .sub-nav-tabs{flex-shrink:0}
     .hero-headline{font-size:28px}
     .hero-tagline{font-size:15px}
-    .tile{padding:30px 16px}
+    .tile{padding:24px 16px}
+    .tile-white{padding-top:18px}
     .song-grid{grid-template-columns:repeat(2, 1fr);gap:10px}
     .song-info{padding:10px 12px}
     .song-info .song-name{font-size:13px}
@@ -848,6 +1003,7 @@
     .row-title{font-size:15px}
     .stat{font-size:10px;padding:6px 0}
     .btn-ghost{padding:8px 12px;font-size:13px}
+    [data-tooltip]::after{display:none}
   }
 
   /* ── Play Button ───────────────────────── */
@@ -901,6 +1057,15 @@
   .mini-player-progress-fill{height:100%;background:var(--primary);width:0%}
   .mini-player-time{font-size:11px;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:70px;text-align:right}
   @media(max-width:600px){.mini-player-time{display:none}.mini-player-cover{width:36px;height:36px}}
+  @media(max-width:480px){
+    .mini-player-inner{
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      gap:10px;
+    }
+    .mini-player-controls{gap:4px}
+    .mini-player-btn{font-size:16px;padding:5px}
+    .mini-player-btn.play-btn{width:34px;height:34px;font-size:18px}
+  }
   @media(prefers-reduced-motion:reduce){
     *,*::before,*::after{
       animation-duration:.001ms !important;
@@ -955,7 +1120,10 @@
         <div class="input-section">
           <div class="input-row">
             <textarea id="songInput" rows="1" placeholder="Song name, YouTube URL, or Spotify URL" autofocus></textarea>
-            <button class="btn btn-pill-sm" id="downloadBtn" onclick="startDownload(event)" style="position:relative;overflow:hidden;flex-shrink:0">Download</button>
+            <button class="btn btn-pill-sm" id="downloadBtn" onclick="startDownload(event)" style="position:relative;overflow:hidden;flex-shrink:0">
+              <span class="btn-spinner" aria-hidden="true"></span>
+              <span class="btn-label">Download</span>
+            </button>
           </div>
         </div>
       </div>
@@ -976,8 +1144,12 @@
         <div class="queue-header">
           <h2 id="queueTitle">Downloads</h2>
           <div class="queue-actions">
-            <button class="btn btn-ghost" onclick="pushToGitHub()" id="pushBtn">Push to GitHub</button>
-            <button class="btn btn-ghost" onclick="clearDone()">Clear done</button>
+            <button class="btn btn-ghost icon-btn" onclick="pushToGitHub()" id="pushBtn" data-tooltip="Push to GitHub" aria-label="Push to GitHub">
+              <span class="icon" aria-hidden="true">&#8679;</span>
+            </button>
+            <button class="btn btn-ghost icon-btn" onclick="clearDone()" data-tooltip="Clear finished" aria-label="Clear finished downloads">
+              <span class="icon" aria-hidden="true">&#10005;</span>
+            </button>
           </div>
         </div>
         <div id="queue"></div>
@@ -993,7 +1165,10 @@
       <div class="tile-inner-wide" style="max-width:1440px;margin:0 auto">
         <div class="library-header">
           <input type="text" class="search-box" id="searchBox" placeholder="Search songs..." oninput="filterLibrary()">
-          <button class="btn btn-pill-sm" onclick="enrichAll()" id="enrichBtn" style="flex-shrink:0;position:relative">Enrich</button>
+          <button class="btn btn-pill-sm" onclick="enrichAll()" id="enrichBtn" style="flex-shrink:0;position:relative" data-tooltip="Enrich metadata" aria-label="Enrich metadata">
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <span class="btn-label">Enrich</span>
+          </button>
         </div>
         <div class="library-count" id="libraryCount">Loading...</div>
         <div class="song-grid" id="songGrid"></div>
@@ -1046,6 +1221,16 @@ let allSongs = [];
 let visibleSongs = [];
 let pendingDownload = null;
 let songsLoaded = false;
+let currentPlayingFile = '';
+
+function setButtonLoading(btn, loading, label) {
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+  const labelEl = btn.querySelector('.btn-label');
+  if (labelEl && label) labelEl.textContent = label;
+  if (!labelEl && label) btn.textContent = label;
+}
 
 // ── Tab Switching ────────────────────────────
 function switchTab(name) {
@@ -1127,12 +1312,16 @@ document.getElementById('modal').addEventListener('click', e => {
 
 // ── Ripple Effect ────────────────────────────
 function createRipple(e, btn) {
+  if (!e || !btn) return;
   const circle = document.createElement('span');
   const diameter = Math.max(btn.clientWidth, btn.clientHeight);
   const radius = diameter / 2;
+  const rect = btn.getBoundingClientRect();
+  const x = typeof e.clientX === 'number' && e.clientX ? e.clientX - rect.left : rect.width / 2;
+  const y = typeof e.clientY === 'number' && e.clientY ? e.clientY - rect.top : rect.height / 2;
   circle.style.width = circle.style.height = `${diameter}px`;
-  circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - radius}px`;
-  circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - radius}px`;
+  circle.style.left = `${x - radius}px`;
+  circle.style.top = `${y - radius}px`;
   circle.classList.add('ripple');
   btn.appendChild(circle);
   setTimeout(() => circle.remove(), 600);
@@ -1149,7 +1338,7 @@ async function startDownload(e) {
   }
 
   createRipple(e, downloadBtn);
-  downloadBtn.disabled = true;
+  setButtonLoading(downloadBtn, true, 'Checking');
 
   const lines = song.split('\n').map(l => l.trim()).filter(Boolean);
   try {
@@ -1161,6 +1350,7 @@ async function startDownload(e) {
     const data = await res.json();
 
     if (data.duplicates && data.duplicates.length > 0) {
+      setButtonLoading(downloadBtn, false, 'Download');
       showModal(
         'Duplicate Songs Found',
         `${data.duplicates.length} song(s) may already exist in your library:`,
@@ -1177,6 +1367,7 @@ async function startDownload(e) {
 async function doDownload(song) {
   songInput.value = '';
   songInput.style.height = 'auto';
+  setButtonLoading(downloadBtn, true, 'Queueing');
 
   try {
     const res = await fetch('/api/download', {
@@ -1207,7 +1398,7 @@ async function doDownload(song) {
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
   } finally {
-    downloadBtn.disabled = false;
+    setButtonLoading(downloadBtn, false, 'Download');
   }
 }
 
@@ -1223,7 +1414,7 @@ async function pollStatus(id) {
       if (data.status === 'done' || data.status === 'failed') {
         loadSongs({silent: true, force: true});
         if (data.status === 'done') {
-          showToast(`Downloaded: ${data.song}`, 'success');
+          showToast(data.message || `Downloaded: ${data.song}`, data.push_status === 'failed' ? 'warning' : 'success', 5000);
         } else {
           showToast(`Failed: ${data.message}`, 'error');
         }
@@ -1263,7 +1454,7 @@ function renderQueue() {
     const isBusy = ['downloading','generating'].includes(t.status);
     const isFinal = ['done','failed'].includes(t.status);
     const msgClass = t.status === 'done' ? 'success' : t.status === 'failed' ? 'error' : '';
-    const rowClass = t.status === 'done' ? 'done-row' : t.status === 'failed' ? 'failed-row' : '';
+    const rowClass = t.status === 'done' ? 'done-row' : t.status === 'failed' ? 'failed-row' : isBusy ? 'active-row' : '';
     const methodBadge = t.method === 'yt-dlp'
       ? '<span class="method-badge fallback">yt-dlp</span>'
       : t.method === 'ytmdl'
@@ -1276,13 +1467,13 @@ function renderQueue() {
         <div class="row-body">
           <div class="row-title">${esc(t.song)}</div>
           <div class="row-meta">${methodBadge}</div>
-          <div class="row-msg ${msgClass}">${esc(t.message)}</div>
+          <div class="row-msg ${msgClass}">${isBusy ? `<span class="row-loading">${esc(t.message)}</span>` : esc(t.message)}</div>
           <div class="progress-bar">
             <div class="fill ${t.status} ${isBusy?'indeterminate':''}"
                  style="width:${t.status==='done'?'100':isBusy?'40':'0'}%"></div>
           </div>
         </div>
-        <button class="row-remove" onclick="removeTask('${t.id}')">&times;</button>
+        <button class="row-remove" onclick="removeTask('${t.id}')" data-tooltip="Remove" aria-label="Remove download">&times;</button>
       </div>`;
   }).join('');
 }
@@ -1314,18 +1505,22 @@ function clearDone() {
 
 async function pushToGitHub() {
   const btn = document.getElementById('pushBtn');
+  const icon = btn.querySelector('.icon');
   btn.disabled = true;
-  btn.textContent = 'Pushing...';
+  btn.classList.add('loading');
+  if (icon) icon.textContent = '...';
   try {
     const res = await fetch('/api/push', {method: 'POST'});
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    showToast('Pushed to GitHub', 'success');
+    if (!res.ok || data.ok === false) throw new Error(data.message || 'Push failed');
+    showToast(data.message || 'Pushed to GitHub', data.status === 'clean' ? 'info' : 'success');
   } catch(e) {
     showToast('Push failed: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Push to GitHub';
+    btn.classList.remove('loading');
+    if (icon) icon.innerHTML = '&#8679;';
   }
 }
 
@@ -1380,20 +1575,25 @@ function renderLibrary(songs) {
     const title = parts.length > 1 ? parts.slice(1).join(' - ').trim() : name;
     const coverUrl = `/songs/${encodeURIComponent(name)}.jpg`;
 
+    const isPlaying = currentPlayingFile === s && typeof audio !== 'undefined' && !audio.paused;
+
     return `
-      <div class="song-card" id="card-${i}" style="animation-delay:${Math.min(i * 12, 120)}ms">
+      <div class="song-card ${isPlaying ? 'is-playing' : ''}" id="card-${i}" data-filename="${esc(s)}" style="animation-delay:${Math.min(i * 12, 120)}ms">
         <div class="song-actions">
-          <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" title="Rename">&#9998;</button>
-          <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" title="Delete">&#128465;</button>
+          <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" data-tooltip="Rename" aria-label="Rename ${esc(title)}">&#9998;</button>
+          <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" data-tooltip="Delete" aria-label="Delete ${esc(title)}">&#128465;</button>
         </div>
-        <button class="play-overlay" onclick="playSongFile(${i}, '${esc(s)}')" title="Play">\u25B6</button>
+        <button class="play-overlay ${isPlaying ? 'playing' : ''}" onclick="playSongFile(${i}, '${esc(s)}')" data-tooltip="${isPlaying ? 'Pause' : 'Play'}" aria-label="${isPlaying ? 'Pause' : 'Play'} ${esc(title)}">${isPlaying ? '\u23F8' : '\u25B6'}</button>
         <div class="song-cover">
           <img src="${coverUrl}" alt="${esc(title)}"
                onerror="this.parentElement.innerHTML='<div class=no-cover>&#127925;</div>'"
                loading="lazy">
         </div>
         <div class="song-info" id="info-${i}">
-          <div class="song-name" title="${esc(title)}">${esc(title)}</div>
+          <div class="song-title-row">
+            <div class="song-name" title="${esc(title)}">${esc(title)}</div>
+            <div class="playing-indicator" aria-hidden="true"><span></span><span></span><span></span></div>
+          </div>
           ${artist ? `<div class="song-artist" title="${esc(artist)}">${esc(artist)}</div>` : ''}
         </div>
       </div>`;
@@ -1502,8 +1702,7 @@ async function deleteSong(filename) {
 // ── Enrich Metadata ─────────────────────────
 async function enrichAll() {
   const btn = document.getElementById('enrichBtn');
-  btn.disabled = true;
-  btn.textContent = 'Enriching...';
+  setButtonLoading(btn, true, 'Enriching');
   try {
     const res = await fetch('/api/enrich-all', {method: 'POST'});
     const data = await res.json();
@@ -1513,8 +1712,7 @@ async function enrichAll() {
   } catch(e) {
     showToast('Enrich failed: ' + e.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Enrich';
+    setButtonLoading(btn, false, 'Enrich');
   }
 }
 
@@ -1525,20 +1723,39 @@ loadSongs({silent: true});
 var audio = new Audio();
 var currentPlayIndex = -1;
 
+function syncPlayingCards(isPlaying) {
+  document.querySelectorAll('.song-card.is-playing').forEach(card => card.classList.remove('is-playing'));
+  document.querySelectorAll('.play-overlay.playing').forEach(btn => {
+    btn.classList.remove('playing');
+    btn.textContent = '\u25B6';
+    btn.setAttribute('data-tooltip', 'Play');
+  });
+
+  if (!isPlaying || !currentPlayingFile) return;
+  const card = document.querySelector('#card-' + currentPlayIndex);
+  if (!card) return;
+  card.classList.add('is-playing');
+  const btn = card.querySelector('.play-overlay');
+  if (btn) {
+    btn.classList.add('playing');
+    btn.textContent = '\u23F8';
+    btn.setAttribute('data-tooltip', 'Pause');
+  }
+}
+
 function playSongFile(index, filename) {
   if (currentPlayIndex === index && !audio.paused) {
     audio.pause();
     return;
   }
-  if (currentPlayIndex >= 0) {
-    var prevBtn = document.querySelector('.play-overlay.playing');
-    if (prevBtn) { prevBtn.classList.remove('playing'); prevBtn.textContent = '\u25B6'; }
-  }
   currentPlayIndex = index;
+  currentPlayingFile = filename;
   audio.src = '/songs/' + encodeURIComponent(filename);
-  audio.play();
-  var btn = document.querySelector('#card-' + index + ' .play-overlay');
-  if (btn) { btn.classList.add('playing'); btn.textContent = '\u23F8'; }
+  audio.play().catch(function(e) {
+    showToast('Playback failed: ' + e.message, 'error');
+    syncPlayingCards(false);
+  });
+  syncPlayingCards(true);
   var parts = filename.replace(/\.mp3$/i, '').split(' - ');
   var artist = parts.length > 1 ? parts[0].trim() : '';
   var title = parts.length > 1 ? parts.slice(1).join(' - ').trim() : filename;
@@ -1558,12 +1775,12 @@ audio.addEventListener('ended', function() {
 
 audio.addEventListener('pause', function() {
   document.getElementById('miniPlay').textContent = '\u25B6';
-  var btn = document.querySelector('#card-' + currentPlayIndex + ' .play-overlay');
-  if (btn) { btn.classList.remove('playing'); btn.textContent = '\u25B6'; }
+  syncPlayingCards(false);
 });
 
 audio.addEventListener('play', function() {
   document.getElementById('miniPlay').textContent = '\u23F8';
+  syncPlayingCards(true);
 });
 
 function syncMiniPlayerProgress() {

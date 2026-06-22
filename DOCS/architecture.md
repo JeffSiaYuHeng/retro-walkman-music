@@ -21,7 +21,7 @@
 │  │  /api/download  /api/status  /api/tasks  /api/songs        │ │
 │  │  /api/check-duplicate  /api/rename  /api/delete            │ │
 │  │  /api/enrich  /api/enrich-all  /api/update-covers          │ │
-│  │  /api/generate  /api/push  /api/git-status                 │ │
+│  │  /api/generate  /api/push  /api/git-status  /api/health    │ │
 │  └─────────────────────────┬─────────────────────────────────┘ │
 │                            │                                    │
 │  ┌─────────────────────────▼─────────────────────────────────┐ │

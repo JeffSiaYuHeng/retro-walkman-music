@@ -296,6 +296,40 @@ Check git working tree status.
 
 ---
 
+### `GET /api/health`
+
+Check whether the download node is alive and ready for remote control through
+ngrok.
+
+**Response:**
+```json
+{
+  "ok": true,
+  "service": "retro-walkman-music",
+  "role": "windows-download-node",
+  "time": 1782115200,
+  "songs": 57,
+  "git": {
+    "clean": true,
+    "changes": 0
+  },
+  "tasks": {
+    "total": 1,
+    "active": 0,
+    "last": {
+      "status": "done",
+      "message": "Downloaded + pushed: Song Name"
+    }
+  },
+  "cdn": {
+    "provider": "jsDelivr",
+    "catalog": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs.json"
+  }
+}
+```
+
+---
+
 ### `GET /songs/<filename>`
 
 Serve a file from the songs directory (MP3 or JPG).

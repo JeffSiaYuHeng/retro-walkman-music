@@ -10,6 +10,7 @@ import uuid
 import subprocess
 import threading
 import re
+import time
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory
 
@@ -422,8 +423,21 @@ def _run_download_inner(task_id: str, query: str):
 
         if success:
             update_task(task_id, status="generating", message="Generating songs.json...")
-            run_generate_json()
-            update_task(task_id, status="done", message=f"Downloaded: {query}")
+            generate_ok = _do_generate()
+            if not generate_ok:
+                update_task(task_id, status="done", push_status="failed",
+                            message=f"Downloaded, songs.json generation failed: {query}")
+                return
+
+            update_task(task_id, message="Pushing library to GitHub...")
+            push_result = git_push()
+            update_task(
+                task_id,
+                status="done",
+                push_status=push_result["status"],
+                message=f"Downloaded + pushed: {query}" if push_result["ok"]
+                        else f"Downloaded, push failed: {push_result['message']}"
+            )
         else:
             update_task(task_id, status="failed", message="Download failed with all methods")
 
@@ -451,26 +465,33 @@ def _do_generate():
             timeout=60,
             check=True,
         )
+        return True
     except Exception as e:
         print(f"generate-songs-json.js failed: {e}")
+        return False
 
 
 def _do_generate_and_push():
     """Generate songs.json then push to GitHub."""
-    _do_generate()
-    git_push()
+    if _do_generate():
+        git_push()
 
 
 def git_push():
-    """Auto commit and push to GitHub."""
+    """Auto commit and push to GitHub. Returns a structured status dict."""
     try:
         # Stage songs/ and songs.json
-        subprocess.run(
+        add_result = subprocess.run(
             ["git", "add", "songs/", "songs.json"],
             cwd=str(BASE_DIR),
             capture_output=True,
+            text=True,
             timeout=10,
         )
+        if add_result.returncode != 0:
+            message = add_result.stderr.strip() or "git add failed"
+            print(f"Git add failed: {message}")
+            return {"ok": False, "status": "failed", "message": message}
 
         # Check if there are changes to commit
         result = subprocess.run(
@@ -483,16 +504,21 @@ def git_push():
 
         if not result.stdout.strip():
             print("No changes to push")
-            return
+            return {"ok": True, "status": "clean", "message": "No changes to push"}
 
         # Commit
         commit_msg = f"Auto: add new songs ({len(os.listdir(SONGS_DIR))} files)"
-        subprocess.run(
+        commit_result = subprocess.run(
             ["git", "commit", "-m", commit_msg],
             cwd=str(BASE_DIR),
             capture_output=True,
+            text=True,
             timeout=10,
         )
+        if commit_result.returncode != 0:
+            message = commit_result.stderr.strip() or commit_result.stdout.strip() or "git commit failed"
+            print(f"Commit failed: {message}")
+            return {"ok": False, "status": "failed", "message": message}
 
         # Push
         result = subprocess.run(
@@ -505,11 +531,15 @@ def git_push():
 
         if result.returncode == 0:
             print("✓ Pushed to GitHub")
+            return {"ok": True, "status": "pushed", "message": "Pushed to GitHub"}
         else:
-            print(f"Push failed: {result.stderr}")
+            message = result.stderr.strip() or result.stdout.strip() or "git push failed"
+            print(f"Push failed: {message}")
+            return {"ok": False, "status": "failed", "message": message}
 
     except Exception as e:
         print(f"Git push failed: {e}")
+        return {"ok": False, "status": "failed", "message": str(e)}
 
 
 def update_task(task_id: str, **kwargs):
@@ -1093,8 +1123,58 @@ def generate():
 @app.route("/api/push", methods=["POST"])
 def push():
     """Manually trigger git push."""
-    git_push()
-    return jsonify({"status": "ok"})
+    result = git_push()
+    status_code = 200 if result["ok"] else 500
+    return jsonify(result), status_code
+
+
+@app.route("/api/health")
+def health():
+    """Remote health check for the Windows download node."""
+    try:
+        SONGS_DIR.mkdir(exist_ok=True)
+        song_count = len([f for f in os.listdir(SONGS_DIR) if f.lower().endswith(".mp3")])
+
+        git_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        changes = len(git_result.stdout.strip().split('\n')) if git_result.stdout.strip() else 0
+
+        with tasks_lock:
+            task_values = list(tasks.values())
+            active_tasks = len([t for t in task_values if t.get("status") in ("queued", "downloading", "generating")])
+            last_task = task_values[-1] if task_values else None
+
+        return jsonify({
+            "ok": True,
+            "service": "retro-walkman-music",
+            "role": "windows-download-node",
+            "time": int(time.time()),
+            "songs": song_count,
+            "git": {
+                "clean": changes == 0,
+                "changes": changes,
+            },
+            "tasks": {
+                "total": len(task_values),
+                "active": active_tasks,
+                "last": last_task,
+            },
+            "cdn": {
+                "provider": "jsDelivr",
+                "catalog": "https://cdn.jsdelivr.net/gh/JeffSiaYuHeng/retro-walkman-music@main/songs.json",
+            },
+        })
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "service": "retro-walkman-music",
+            "error": str(e),
+        }), 500
 
 
 @app.route("/api/git-status")

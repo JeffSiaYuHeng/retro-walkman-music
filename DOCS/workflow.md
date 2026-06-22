@@ -170,6 +170,14 @@ After `generate-songs-json.js` completes, the system automatically:
 
 This ensures the CDN URLs in `songs.json` are always up-to-date.
 
+For remote use, each successful download task waits for this generate + push
+step before reporting its final message:
+
+- `Downloaded + pushed: <song>` when GitHub is updated or there are no changes
+  left to push.
+- `Downloaded, push failed: <reason>` when the MP3 exists locally but GitHub/CDN
+  may not have the latest files yet.
+
 ### Manual Push
 
 Click "Push to GitHub" button in the UI, or:
