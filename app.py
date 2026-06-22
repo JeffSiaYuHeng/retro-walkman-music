@@ -412,9 +412,11 @@ def _run_download_inner(task_id: str, query: str):
             elif 'youtube.com' in parsed.hostname:
                 qs = urllib.parse.parse_qs(parsed.query)
                 video_id = qs.get('v', [None])[0]
+                if not video_id and '/shorts/' in parsed.path:
+                    video_id = parsed.path.split('/shorts/')[-1].split('/')[0]
             if video_id:
-                # Try ytsearch with the video ID as query
-                success = try_ytdlp_fallback(f"ytsearch1:{video_id}", "search", task_id)
+                # Retry with the direct video ID URL instead of a text search
+                success = try_ytdlp_fallback(f"https://www.youtube.com/watch?v={video_id}", "youtube", task_id)
 
         # Fallback: try ytmdl if yt-dlp failed
         if not success:
@@ -507,7 +509,8 @@ def git_push():
             return {"ok": True, "status": "clean", "message": "No changes to push"}
 
         # Commit
-        commit_msg = f"Auto: add new songs ({len(os.listdir(SONGS_DIR))} files)"
+        mp3_count = len([f for f in os.listdir(SONGS_DIR) if f.lower().endswith('.mp3')])
+        commit_msg = f"Auto: add new songs ({mp3_count} files)"
         commit_result = subprocess.run(
             ["git", "commit", "-m", commit_msg],
             cwd=str(BASE_DIR),
