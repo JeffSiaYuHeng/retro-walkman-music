@@ -238,6 +238,37 @@ Batch enrich all songs with missing/invalid artist info. Searches ytmusicapi for
 
 ---
 
+### `POST /api/update-covers`
+
+Fetch and embed missing cover art for songs in the library.
+
+**Request Body:**
+```json
+{
+  "force": false
+}
+```
+
+Set `force` to `true` to replace existing cover images.
+
+**Response:**
+```json
+{
+  "updated": 2,
+  "files": ["Artist - Song.mp3"]
+}
+```
+
+---
+
+### `GET /api/tasks`
+
+List current in-memory download tasks. Useful for debugging active sessions.
+
+**Response:** Array of task objects
+
+---
+
 ### `POST /api/push`
 
 Manually trigger git add, commit, and push to GitHub.
@@ -272,12 +303,6 @@ Serve a file from the songs directory (MP3 or JPG).
 **Response:** Binary file
 
 ---
-
-### `GET /api/tasks`
-
-List all active tasks (for debugging).
-
-**Response:** Array of task objects
 
 ## Error Responses
 

@@ -1,4 +1,12 @@
 {
+  "name": "retro-walkman-music",
+  "private": true,
+  "scripts": {
+    "start": "python3 app.py",
+    "generate": "node generate-songs-json.js",
+    "check:python": "python3 -m py_compile app.py",
+    "check:node": "node --check generate-songs-json.js"
+  },
   "dependencies": {
     "music-metadata": "^7.14.0"
   }

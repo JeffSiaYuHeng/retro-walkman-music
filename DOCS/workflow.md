@@ -50,15 +50,13 @@ User Input
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              STEP 1: Try ytmdl (primary)                     │
+│              STEP 1: Try yt-dlp                              │
 │                                                             │
-│  Command: ytmdl --output-dir ./songs --quiet --disable-sort │
+│  Command: yt-dlp -x --audio-format mp3                      │
+│  --write-thumbnail --embed-thumbnail --print-json           │
 │                                                             │
-│  For YouTube URL: ytmdl --url <URL>                         │
-│  For Spotify URL: ytmdl <URL>                               │
-│  For search: ytmdl <query>                                  │
-│                                                             │
-│  Timeout: 60 seconds                                        │
+│  For YouTube URL: use direct URL                            │
+│  For Spotify/search input: use ytsearch1:<query>            │
 └─────────────────────────┬───────────────────────────────────┘
                           │
               ┌───────────┴───────────┐
@@ -68,11 +66,10 @@ User Input
                     │     │
                     │     ▼
                     │  ┌──────────────────────────────────────┐
-                    │  │  STEP 2: Try yt-dlp (fallback)       │
+                    │  │  STEP 2: Try ytmdl (fallback)        │
                     │  │                                      │
-                    │  │  Command: yt-dlp -x --audio-format   │
-                    │  │  mp3 --write-thumbnail --embed-      │
-                    │  │  thumbnail --print-json               │
+                    │  │  Command: ytmdl --output-dir ./songs │
+                    │  │  --quiet --disable-sort              │
                     │  │                                      │
                     │  │  Timeout: 120 seconds                │
                     │  └──────────────────┬───────────────────┘
@@ -100,7 +97,27 @@ User Input
                     Task = done
 ```
 
-## ytmdl Behavior
+## yt-dlp Behavior
+
+The current app tries `yt-dlp` first because this environment has a working
+`yt-dlp` + ffmpeg path configured in `app.py`.
+
+| Input Type | Command | Metadata |
+|------------|---------|----------|
+| YouTube URL | `yt-dlp <URL>` | YouTube JSON plus external metadata lookup |
+| Spotify URL | `yt-dlp ytsearch1:<query>` | YouTube search result plus external lookup |
+| Song name | `yt-dlp ytsearch1:<query>` | YouTube search result plus external lookup |
+
+**Process:**
+1. Download audio as `<video_id>.mp3`
+2. Download thumbnail as `<video_id>.jpg`
+3. Embed thumbnail into MP3 (`--embed-thumbnail`)
+4. Parse JSON output for artist/title
+5. Search ytmusicapi, iTunes, Deezer, then MusicBrainz for cleaner metadata
+6. Rename to `Artist - Title.mp3` and write ID3 tags
+7. Save and embed cover art when found
+
+## ytmdl Fallback Behavior
 
 | Input Type | Command | Metadata Source |
 |------------|---------|-----------------|
@@ -110,33 +127,18 @@ User Input
 
 **Output:** `songs/Artist - Title.mp3` (with embedded metadata + cover)
 
-## yt-dlp Fallback Behavior
-
-| Input Type | Command | Metadata |
-|------------|---------|----------|
-| YouTube URL | `yt-dlp <URL>` | YouTube title only |
-| Spotify URL | `yt-dlp ytsearch1:<query>` | YouTube search result |
-| Song name | `yt-dlp ytsearch1:<query>` | YouTube search result |
-
-**Process:**
-1. Download audio as `<video_id>.mp3`
-2. Download thumbnail as `<video_id>.jpg`
-3. Embed thumbnail into MP3 (`--embed-thumbnail`)
-4. Parse JSON output for artist/title
-5. Rename to `Artist - Title.mp3` and `Artist - Title.jpg`
-
 ## Cover Art Flow
 
 ```
-ytmdl Success:
+yt-dlp Success:
+    └─ Metadata from YouTube JSON + ytmusicapi/external APIs
+    └─ Cover from iTunes, Deezer, MusicBrainz, or YouTube thumbnail
+    └─ Cover saved beside MP3 and embedded
+    └─ generate-songs-json.js reads metadata → songs.json
+
+ytmdl Fallback Success:
     └─ Metadata from Spotify/iTunes
     └─ Cover embedded in MP3
-    └─ generate-songs-json.js extracts → songs/Artist - Title.jpg
-
-yt-dlp Fallback:
-    └─ YouTube video thumbnail
-    └─ Embedded via --embed-thumbnail
-    └─ Renamed to match MP3 filename
     └─ generate-songs-json.js extracts → songs/Artist - Title.jpg
 ```
 

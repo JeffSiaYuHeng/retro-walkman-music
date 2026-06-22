@@ -2,7 +2,7 @@
 Music Downloader — Web Backend
 Flask server that downloads songs via ytmdl/yt-dlp and serves a web interface.
 Supports: song name search, YouTube URLs, Spotify URLs.
-Fallback: ytmdl → yt-dlp direct download.
+Download order: yt-dlp first, ytmdl fallback.
 """
 import os
 import json
@@ -373,7 +373,7 @@ def write_id3_tags(mp3_path: Path, title: str = "", artist: str = "", album: str
 
 
 def run_download(task_id: str, query: str):
-    """Download with fallback: ytmdl → yt-dlp."""
+    """Download with fallback: yt-dlp first, ytmdl fallback."""
     try:
         _run_download_inner(task_id, query)
     except Exception as e:
@@ -530,11 +530,6 @@ def get_task(task_id: str) -> dict:
 @app.route("/")
 def index():
     return send_from_directory(str(BASE_DIR), "index.html")
-
-
-@app.route("/gift")
-def gift():
-    return send_from_directory(str(BASE_DIR / "gift"), "index.html")
 
 
 @app.route("/api/download", methods=["POST"])

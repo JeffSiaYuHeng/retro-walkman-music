@@ -18,9 +18,10 @@
 │                  ▼          Flask Server (app.py)               │
 │  ┌───────────────────────────────────────────────────────────┐ │
 │  │                    API Routes                             │ │
-│  │  /api/download  /api/status  /api/songs  /api/check-dup   │ │
-│  │  /api/rename  /api/delete  /api/enrich  /api/enrich-all   │ │
-│  │  /api/push  /api/git-status                                │ │
+│  │  /api/download  /api/status  /api/tasks  /api/songs        │ │
+│  │  /api/check-duplicate  /api/rename  /api/delete            │ │
+│  │  /api/enrich  /api/enrich-all  /api/update-covers          │ │
+│  │  /api/generate  /api/push  /api/git-status                 │ │
 │  └─────────────────────────┬─────────────────────────────────┘ │
 │                            │                                    │
 │  ┌─────────────────────────▼─────────────────────────────────┐ │
@@ -54,7 +55,7 @@
 |-----------|---------------|
 | Flask Server | HTTP request handling, static file serving |
 | Task Manager | Thread-safe in-memory task tracking |
-| Download Orchestrator | ytmdl → yt-dlp fallback logic |
+| Download Orchestrator | yt-dlp first, ytmdl fallback logic |
 | Cover Embedder | Embed thumbnails into MP3 metadata |
 | Generate Trigger | Debounced songs.json regeneration |
 | Song Manager | Rename/delete songs with cover sync |

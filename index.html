@@ -37,8 +37,8 @@
     background:var(--canvas-parchment);
     color:var(--ink);
     font-family:var(--font-body);
-    font-size:17px;font-weight:400;line-height:1.47;
-    letter-spacing:-0.022em;
+    font-size:16px;font-weight:400;line-height:1.5;
+    letter-spacing:0;
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
   }
@@ -59,7 +59,7 @@
     font-family:var(--font-display);
     font-size:18px;font-weight:600;
     color:var(--body-on-dark);
-    letter-spacing:-0.02em;
+    letter-spacing:0;
     display:flex;align-items:center;gap:10px;
   }
   .global-nav .nav-logo-icon{
@@ -76,7 +76,7 @@
     font-size:12px;font-weight:400;
     color:var(--body-muted);
     text-decoration:none;cursor:pointer;
-    letter-spacing:-0.01em;
+    letter-spacing:0;
     transition:color .2s;
     background:none;border:none;
     font-family:var(--font-body);
@@ -119,7 +119,7 @@
     font-family:var(--font-display);
     font-size:21px;font-weight:600;
     color:var(--ink);
-    letter-spacing:0.011em;
+    letter-spacing:0;
   }
   .sub-nav .sub-nav-tabs{
     display:flex;gap:4px;align-items:center;
@@ -130,8 +130,8 @@
     background:none;border:none;
     padding:6px 14px;border-radius:9999px;
     cursor:pointer;font-family:var(--font-body);
-    letter-spacing:-0.016em;
-    transition:all .2s;
+    letter-spacing:0;
+    transition:color .16s, background-color .16s;
   }
   .sub-nav .sub-tab:hover{color:var(--ink)}
   .sub-nav .sub-tab.active{
@@ -140,13 +140,23 @@
   }
 
   /* ── Main Container ────────────────────── */
-  .main{width:100%}
+  .main{
+    width:100%;
+    padding-bottom:76px;
+  }
+  .tab-panel{
+    animation:panelIn .22s ease both;
+  }
+  @keyframes panelIn{
+    from{opacity:.72;transform:translateY(4px)}
+    to{opacity:1;transform:translateY(0)}
+  }
 
   /* ── Hero Section (Light Tile) ─────────── */
   .tile{
     width:100%;
     display:flex;justify-content:center;
-    padding:80px 24px;
+    padding:64px 24px;
   }
   .tile-dark{
     background:var(--surface-tile-1);
@@ -169,15 +179,15 @@
   /* ── Hero Headline ─────────────────────── */
   .hero-headline{
     font-family:var(--font-display);
-    font-size:56px;font-weight:600;
-    line-height:1.07;letter-spacing:-0.005em;
+    font-size:52px;font-weight:650;
+    line-height:1.08;letter-spacing:0;
     margin-bottom:12px;
   }
   .hero-tagline{
-    font-size:28px;font-weight:400;
-    line-height:1.14;letter-spacing:0.007em;
+    font-size:24px;font-weight:400;
+    line-height:1.25;letter-spacing:0;
     color:var(--ink-muted-48);
-    margin-bottom:32px;
+    margin-bottom:28px;
   }
   .tile-dark .hero-tagline{color:var(--body-muted)}
 
@@ -190,7 +200,7 @@
   .btn{
     border:none;cursor:pointer;
     font-family:var(--font-body);
-    transition:all .15s;
+    transition:background-color .15s, border-color .15s, color .15s, transform .15s, opacity .15s, box-shadow .15s;
     display:inline-flex;align-items:center;justify-content:center;
   }
   .btn:active{transform:scale(0.95)}
@@ -203,7 +213,7 @@
     background:var(--primary);color:#fff;
     font-size:17px;font-weight:400;
     padding:11px 22px;border-radius:9999px;
-    letter-spacing:-0.022em;
+    letter-spacing:0;
   }
   .btn-primary:hover{background:#0077ed}
 
@@ -212,7 +222,7 @@
     font-size:17px;font-weight:400;
     padding:11px 22px;border-radius:9999px;
     border:1px solid var(--primary);
-    letter-spacing:-0.022em;
+    letter-spacing:0;
   }
   .btn-secondary-pill:hover{background:rgba(0,102,204,0.06)}
 
@@ -220,7 +230,7 @@
     background:var(--ink);color:var(--body-on-dark);
     font-size:14px;font-weight:400;
     padding:8px 15px;border-radius:8px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .btn-utility:hover{background:#333}
 
@@ -230,7 +240,7 @@
     color:var(--ink-muted-80);
     font-size:14px;font-weight:400;
     padding:6px 14px;border-radius:8px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .btn-ghost:hover{border-color:var(--ink-muted-48);color:var(--ink)}
 
@@ -238,7 +248,7 @@
     background:var(--primary);color:#fff;
     font-size:14px;font-weight:400;
     padding:8px 18px;border-radius:9999px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .btn-pill-sm:hover{background:#0077ed}
   .btn-pill-sm:disabled{opacity:.4;cursor:not-allowed;transform:none}
@@ -252,7 +262,7 @@
     -webkit-backdrop-filter:blur(8px);
     border:none;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    transition:all .15s;
+    transition:background-color .15s, transform .15s, opacity .15s;
   }
   .btn-icon:hover{background:rgba(210,210,215,0.85)}
   .btn-icon:active{transform:scale(0.95)}
@@ -273,13 +283,13 @@
     display:flex;justify-content:space-between;align-items:baseline;
     font-size:14px;font-weight:600;
     color:var(--ink);
-    letter-spacing:-0.016em;
+    letter-spacing:0;
     margin-bottom:12px;
   }
   .input-label .hint{
     font-weight:400;font-size:12px;
     color:var(--ink-muted-48);
-    letter-spacing:-0.01em;
+    letter-spacing:0;
   }
   .input-row{
     display:flex;gap:12px;align-items:flex-end;
@@ -296,7 +306,7 @@
     min-height:48px;max-height:200px;
     transition:border-color .2s, box-shadow .2s;
     line-height:1.47;
-    letter-spacing:-0.022em;
+    letter-spacing:0;
   }
   .input-row textarea:focus{
     border-color:var(--primary-focus);
@@ -316,8 +326,8 @@
     padding:10px 0;border-radius:9px;
     font-size:12px;font-weight:600;
     color:var(--ink-muted-48);
-    letter-spacing:-0.01em;
-    transition:all .3s;
+    letter-spacing:0;
+    transition:background-color .2s, color .2s;
   }
   .stat.active{color:var(--primary);background:var(--canvas)}
   .stat.done{color:var(--green);background:rgba(52,199,89,.08)}
@@ -330,7 +340,7 @@
   }
   .queue-header h2{
     font-size:21px;font-weight:600;
-    letter-spacing:0.011em;
+    letter-spacing:0;
   }
   .queue-actions{display:flex;gap:8px}
 
@@ -338,13 +348,16 @@
   .row{
     background:var(--canvas);
     border:1px solid var(--hairline);
-    border-radius:18px;padding:20px;
+    border-radius:12px;padding:18px;
     margin-bottom:10px;
     display:flex;align-items:flex-start;gap:16px;
     animation:slideIn .3s cubic-bezier(.22,1,.36,1);
-    transition:border-color .3s;
+    transition:border-color .2s, box-shadow .2s, transform .2s;
   }
-  .row:hover{border-color:rgba(0,102,204,.2)}
+  .row:hover{
+    border-color:rgba(0,102,204,.22);
+    box-shadow:0 8px 24px rgba(0,0,0,.05);
+  }
   .row.done-row{border-color:rgba(52,199,89,.25)}
   .row.failed-row{border-color:rgba(255,59,48,.25)}
 
@@ -365,7 +378,7 @@
     width:40px;height:40px;border-radius:10px;
     display:flex;align-items:center;justify-content:center;
     font-size:18px;flex-shrink:0;margin-top:2px;
-    transition:all .3s;
+    transition:background-color .2s, color .2s, transform .2s, opacity .2s;
   }
   .row-icon.queued{background:rgba(122,122,122,.08);color:var(--ink-muted-48)}
   .row-icon.downloading{
@@ -397,13 +410,13 @@
   .row-body{flex:1;min-width:0}
   .row-title{
     font-size:17px;font-weight:600;margin-bottom:4px;
-    letter-spacing:-0.022em;
+    letter-spacing:0;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .row-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
   .method-badge{
     font-size:10px;font-weight:600;
-    text-transform:uppercase;letter-spacing:0.02em;
+    text-transform:uppercase;letter-spacing:0;
     padding:2px 8px;border-radius:9999px;
     background:rgba(90,200,250,.1);color:var(--cyan);
   }
@@ -411,7 +424,7 @@
   .row-msg{
     font-size:14px;color:var(--ink-muted-48);margin-bottom:10px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
     transition:color .3s;
   }
   .row-msg.success{color:var(--green)}
@@ -444,7 +457,7 @@
     width:32px;height:32px;border-radius:50%;
     cursor:pointer;font-size:14px;
     display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;margin-top:2px;transition:all .15s;
+    flex-shrink:0;margin-top:2px;transition:background-color .15s, border-color .15s, color .15s, transform .15s;
   }
   .row-remove:hover{background:var(--red);border-color:var(--red);color:#fff;transform:scale(0.95)}
 
@@ -452,14 +465,14 @@
   .empty{
     text-align:center;padding:64px 20px;
     color:var(--ink-muted-48);font-size:17px;line-height:1.47;
-    letter-spacing:-0.022em;
+    letter-spacing:0;
   }
 
   /* ── Skeleton Loading ──────────────────── */
   .skeleton{
     background:var(--canvas);
     border:1px solid var(--hairline);
-    border-radius:18px;
+    border-radius:12px;
     overflow:hidden;
     animation:skPulse 1.5s ease infinite;
   }
@@ -493,7 +506,7 @@
     font-size:17px;color:var(--ink);
     font-family:var(--font-body);
     outline:none;
-    letter-spacing:-0.022em;
+    letter-spacing:0;
     transition:border-color .2s, box-shadow .2s;
   }
   .search-box:focus{
@@ -505,32 +518,36 @@
   .library-count{
     font-size:14px;color:var(--ink-muted-48);
     margin-bottom:16px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
 
   .song-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
-    gap:20px;
+    grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+    gap:16px;
+    align-items:start;
   }
   .song-card{
     background:var(--canvas);
     border:1px solid var(--hairline);
-    border-radius:18px;
+    border-radius:12px;
     overflow:hidden;
-    transition:all .2s;
+    transition:border-color .18s, box-shadow .18s, transform .18s;
     cursor:default;
-    animation:fadeDown .3s ease both;
+    animation:fadeDown .24s ease both;
     position:relative;
+    content-visibility:auto;
+    contain-intrinsic-size:250px;
   }
   .song-card:hover{
     border-color:rgba(0,102,204,.2);
-    transform:translateY(-2px);
+    transform:translateY(-1px);
+    box-shadow:0 10px 28px rgba(0,0,0,.06);
   }
   .song-actions{
     position:absolute;top:10px;right:10px;
     display:flex;gap:6px;
-    opacity:0;transition:opacity .2s;
+    opacity:0;transition:opacity .16s;
     z-index:10;
   }
   .song-card:hover .song-actions{opacity:1}
@@ -538,7 +555,7 @@
     width:32px;height:32px;border-radius:50%;
     border:none;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    font-size:13px;transition:all .15s;
+    font-size:13px;transition:background-color .15s, transform .15s, opacity .15s;
     backdrop-filter:blur(8px);
     -webkit-backdrop-filter:blur(8px);
   }
@@ -556,14 +573,14 @@
     font-family:var(--font-body);
     outline:none;
     margin-bottom:6px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .rename-actions{display:flex;gap:6px}
   .rename-actions button{
     flex:1;border:none;border-radius:9999px;
     padding:6px 0;font-size:12px;font-weight:600;
     cursor:pointer;font-family:var(--font-body);
-    transition:all .15s;
+    transition:background-color .15s, transform .15s;
   }
   .rename-actions button:active{transform:scale(0.95)}
   .rename-actions .r-save{background:var(--primary);color:#fff}
@@ -580,25 +597,28 @@
   .song-cover img{
     width:100%;height:100%;
     object-fit:cover;
-    transition:transform .3s;
+    transition:transform .25s ease;
   }
-  .song-card:hover .song-cover img{transform:scale(1.03)}
+  .song-card:hover .song-cover img{transform:scale(1.018)}
   .song-cover .no-cover{
     width:100%;height:100%;
     background:var(--canvas-parchment);
     display:flex;align-items:center;justify-content:center;
     font-size:36px;
   }
-  .song-info{padding:14px 16px}
+  .song-info{
+    padding:12px 14px 14px;
+    min-height:66px;
+  }
   .song-info .song-name{
     font-size:14px;font-weight:600;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     margin-bottom:4px;
   }
   .song-info .song-artist{
     font-size:12px;color:var(--ink-muted-48);
-    letter-spacing:-0.01em;
+    letter-spacing:0;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
 
@@ -617,7 +637,7 @@
   .modal{
     background:var(--canvas);
     border:1px solid var(--hairline);
-    border-radius:18px;
+    border-radius:14px;
     padding:32px;
     width:90%;max-width:420px;
     transform:scale(.95);
@@ -627,13 +647,13 @@
   .modal h3{
     font-family:var(--font-display);
     font-size:21px;font-weight:600;
-    letter-spacing:0.011em;
+    letter-spacing:0;
     margin-bottom:8px;
   }
   .modal p{
     font-size:14px;color:var(--ink-muted-48);
     line-height:1.47;margin-bottom:20px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .modal .dup-list{
     background:var(--canvas-parchment);
@@ -644,7 +664,7 @@
     font-size:14px;color:var(--orange);
     padding:4px 0;
     display:flex;align-items:center;gap:8px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .modal-actions{display:flex;gap:10px;justify-content:flex-end}
   .btn-modal-cancel{
@@ -653,8 +673,8 @@
     font-size:14px;font-weight:400;
     padding:10px 20px;border-radius:9999px;
     cursor:pointer;font-family:var(--font-body);
-    letter-spacing:-0.016em;
-    transition:all .15s;
+    letter-spacing:0;
+    transition:background-color .15s, transform .15s;
   }
   .btn-modal-cancel:hover{background:var(--divider-soft)}
   .btn-modal-cancel:active{transform:scale(0.95)}
@@ -664,8 +684,8 @@
     font-size:14px;font-weight:400;
     padding:10px 20px;border-radius:9999px;
     cursor:pointer;font-family:var(--font-body);
-    letter-spacing:-0.016em;
-    transition:all .15s;
+    letter-spacing:0;
+    transition:background-color .15s, transform .15s;
   }
   .btn-modal-danger:hover{background:#e0342b}
   .btn-modal-danger:active{transform:scale(0.95)}
@@ -685,7 +705,7 @@
   .confirm-box{
     background:var(--canvas);
     border:1px solid var(--hairline);
-    border-radius:18px;
+    border-radius:14px;
     padding:32px;
     width:90%;max-width:380px;
     transform:scale(.95);
@@ -695,13 +715,13 @@
   .confirm-box h3{
     font-family:var(--font-display);
     font-size:21px;font-weight:600;
-    letter-spacing:0.011em;
+    letter-spacing:0;
     margin-bottom:8px;
   }
   .confirm-box p{
     font-size:14px;color:var(--ink-muted-48);
     line-height:1.47;margin-bottom:20px;
-    letter-spacing:-0.016em;
+    letter-spacing:0;
   }
   .confirm-actions{display:flex;gap:10px;justify-content:flex-end}
 
@@ -723,8 +743,8 @@
     pointer-events:auto;
     display:flex;align-items:center;gap:12px;
     animation:toastIn .4s cubic-bezier(.22,1,.36,1);
-    transition:all .3s ease;
-    letter-spacing:-0.016em;
+    transition:opacity .25s ease, transform .25s ease, border-color .2s;
+    letter-spacing:0;
   }
   .toast.removing{
     opacity:0;transform:translateY(10px) scale(.95);
@@ -762,7 +782,7 @@
   }
   .footer-text{
     font-size:12px;color:var(--ink-muted-48);
-    line-height:1.0;letter-spacing:-0.01em;
+    line-height:1.0;letter-spacing:0;
   }
 
   /* ── Responsive ────────────────────────── */
@@ -784,8 +804,8 @@
     .global-nav{position:sticky}
     .hero-headline{font-size:42px}
     .hero-tagline{font-size:22px}
-    .tile{padding:56px 20px}
-    .song-grid{grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));gap:14px}
+    .tile{padding:48px 20px}
+    .song-grid{grid-template-columns:repeat(auto-fill, minmax(158px, 1fr));gap:14px}
     .input-row{flex-direction:column}
     .input-row textarea{border-radius:14px}
     .input-row .btn-pill-sm{width:100%;border-radius:14px}
@@ -819,7 +839,7 @@
   @media(max-width:480px){
     .hero-headline{font-size:28px}
     .hero-tagline{font-size:15px}
-    .tile{padding:32px 16px}
+    .tile{padding:30px 16px}
     .song-grid{grid-template-columns:repeat(2, 1fr);gap:10px}
     .song-info{padding:10px 12px}
     .song-info .song-name{font-size:13px}
@@ -839,7 +859,7 @@
     display:flex;align-items:center;justify-content:center;
     font-size:16px;
     opacity:0;transform:translateY(6px);
-    transition:all .2s;z-index:10;
+    transition:opacity .16s, transform .16s, background-color .16s;z-index:10;
     box-shadow:0 4px 12px rgba(0,0,0,.2);
   }
   .song-card:hover .play-overlay{opacity:1;transform:translateY(0)}
@@ -853,7 +873,7 @@
     -webkit-backdrop-filter:blur(20px);
     border-top:1px solid rgba(255,255,255,.1);
     padding:0;transform:translateY(100%);
-    transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+    transition:transform .28s cubic-bezier(.22,1,.36,1);
   }
   .mini-player.show{transform:translateY(0)}
   .mini-player-inner{
@@ -878,9 +898,17 @@
   .mini-player-btn.play-btn{font-size:22px;opacity:1;width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center}
   .mini-player-btn.play-btn:hover{background:var(--primary-focus)}
   .mini-player-progress{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.1);cursor:pointer}
-  .mini-player-progress-fill{height:100%;background:var(--primary);width:0%;transition:width .3s linear}
+  .mini-player-progress-fill{height:100%;background:var(--primary);width:0%}
   .mini-player-time{font-size:11px;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:70px;text-align:right}
   @media(max-width:600px){.mini-player-time{display:none}.mini-player-cover{width:36px;height:36px}}
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      scroll-behavior:auto !important;
+      transition-duration:.001ms !important;
+    }
+  }
 
 </style>
 </head>
@@ -917,7 +945,7 @@
 <div class="main">
 
   <!-- Tab: Downloader -->
-  <div id="panel-downloader">
+  <div id="panel-downloader" class="tab-panel">
 
     <!-- Hero Tile (Parchment) -->
     <div class="tile tile-parchment">
@@ -958,7 +986,7 @@
   </div>
 
   <!-- Tab: Library -->
-  <div id="panel-library" style="display:none">
+  <div id="panel-library" class="tab-panel" style="display:none">
 
     <!-- Library Tile (Parchment) -->
     <div class="tile tile-parchment">
@@ -1015,7 +1043,9 @@ const toastContainer = document.getElementById('toastContainer');
 
 let tasks = {};
 let allSongs = [];
+let visibleSongs = [];
 let pendingDownload = null;
+let songsLoaded = false;
 
 // ── Tab Switching ────────────────────────────
 function switchTab(name) {
@@ -1026,7 +1056,7 @@ function switchTab(name) {
   const panel = document.getElementById('panel-' + name);
   if (panel) panel.style.display = '';
   document.getElementById('subNavTitle').textContent = name === 'library' ? 'Library' : 'Downloader';
-  if (name === 'library') loadSongs();
+  if (name === 'library') loadSongs({silent: songsLoaded});
   const btn = document.getElementById('navHamburger');
   if (btn) btn.classList.remove('open');
   document.querySelector('.global-nav .nav-links').classList.remove('show');
@@ -1191,7 +1221,7 @@ async function pollStatus(id) {
       renderQueue();
 
       if (data.status === 'done' || data.status === 'failed') {
-        loadSongs();
+        loadSongs({silent: true, force: true});
         if (data.status === 'done') {
           showToast(`Downloaded: ${data.song}`, 'success');
         } else {
@@ -1302,7 +1332,7 @@ async function pushToGitHub() {
 // ── Library ──────────────────────────────────
 function showSkeleton() {
   const grid = document.getElementById('songGrid');
-  grid.innerHTML = Array(8).fill(0).map(() => `
+  grid.innerHTML = Array(10).fill(0).map(() => `
     <div class="skeleton">
       <div class="sk-cover"></div>
       <div class="sk-info">
@@ -1313,24 +1343,30 @@ function showSkeleton() {
   `).join('');
 }
 
-async function loadSongs() {
+async function loadSongs(options = {}) {
+  const {silent = false, force = false} = options;
   const grid = document.getElementById('songGrid');
-  showSkeleton();
+  if (songsLoaded && !force) {
+    filterLibrary();
+    return;
+  }
+  if (!silent) showSkeleton();
 
   try {
     const res = await fetch('/api/songs');
     allSongs = await res.json();
+    songsLoaded = true;
 
-    document.getElementById('libraryCount').textContent = `${allSongs.length} songs in library`;
-
-    renderLibrary(allSongs);
+    filterLibrary();
   } catch(e) {
-    grid.innerHTML = '<div class="empty">Failed to load songs</div>';
+    if (!silent) grid.innerHTML = '<div class="empty">Failed to load songs</div>';
+    showToast('Failed to refresh library', 'error');
   }
 }
 
 function renderLibrary(songs) {
   const grid = document.getElementById('songGrid');
+  visibleSongs = songs;
 
   if (!songs.length) {
     grid.innerHTML = '<div class="empty">No songs yet</div>';
@@ -1345,7 +1381,7 @@ function renderLibrary(songs) {
     const coverUrl = `/songs/${encodeURIComponent(name)}.jpg`;
 
     return `
-      <div class="song-card" id="card-${i}" style="animation-delay:${Math.min(i * 30, 300)}ms">
+      <div class="song-card" id="card-${i}" style="animation-delay:${Math.min(i * 12, 120)}ms">
         <div class="song-actions">
           <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" title="Rename">&#9998;</button>
           <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" title="Delete">&#128465;</button>
@@ -1391,7 +1427,7 @@ function startRename(idx, filename) {
     <input type="text" class="rename-input" id="renameInput-${idx}" value="${esc(currentName)}">
     <div class="rename-actions">
       <button class="r-save" onclick="saveRename(${idx}, '${esc(filename)}')">Save</button>
-      <button class="r-cancel" onclick="loadSongs()">Cancel</button>
+      <button class="r-cancel" onclick="filterLibrary()">Cancel</button>
     </div>
   `;
   const input = document.getElementById('renameInput-' + idx);
@@ -1399,7 +1435,7 @@ function startRename(idx, filename) {
   input.select();
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') saveRename(idx, filename);
-    if (e.key === 'Escape') loadSongs();
+    if (e.key === 'Escape') filterLibrary();
   });
 }
 
@@ -1418,7 +1454,7 @@ async function saveRename(idx, oldFilename) {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showToast('Renamed successfully', 'success');
-    loadSongs();
+    loadSongs({silent: true, force: true});
   } catch(e) {
     showToast('Rename failed: ' + e.message, 'error');
   }
@@ -1457,7 +1493,7 @@ async function deleteSong(filename) {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showToast('Deleted: ' + filename.replace(/\.mp3$/i, ''), 'success');
-    loadSongs();
+    loadSongs({silent: true, force: true});
   } catch(e) {
     showToast('Delete failed: ' + e.message, 'error');
   }
@@ -1473,7 +1509,7 @@ async function enrichAll() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     showToast(`Enriched ${data.enriched} songs`, 'success');
-    loadSongs();
+    loadSongs({silent: true, force: true});
   } catch(e) {
     showToast('Enrich failed: ' + e.message, 'error');
   } finally {
@@ -1483,7 +1519,7 @@ async function enrichAll() {
 }
 
 // ── Init ─────────────────────────────────────
-loadSongs();
+loadSongs({silent: true});
 
 // ── Mini Audio Player ─────────────────────
 var audio = new Audio();
@@ -1515,8 +1551,8 @@ function playSongFile(index, filename) {
 }
 
 audio.addEventListener('ended', function() {
-  if (currentPlayIndex < allSongs.length - 1) {
-    playSongFile(currentPlayIndex + 1, allSongs[currentPlayIndex + 1]);
+  if (currentPlayIndex < visibleSongs.length - 1) {
+    playSongFile(currentPlayIndex + 1, visibleSongs[currentPlayIndex + 1]);
   }
 });
 
@@ -1530,11 +1566,14 @@ audio.addEventListener('play', function() {
   document.getElementById('miniPlay').textContent = '\u23F8';
 });
 
-setInterval(function() {
+function syncMiniPlayerProgress() {
   if (!audio.duration) return;
   document.getElementById('miniProgressFill').style.width = (audio.currentTime / audio.duration * 100) + '%';
   document.getElementById('miniTime').textContent = fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration);
-}, 500);
+}
+
+audio.addEventListener('timeupdate', syncMiniPlayerProgress);
+audio.addEventListener('loadedmetadata', syncMiniPlayerProgress);
 
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00';
@@ -1546,10 +1585,10 @@ document.getElementById('miniPlay').addEventListener('click', function() {
   audio.paused ? audio.play() : audio.pause();
 });
 document.getElementById('miniPrev').addEventListener('click', function() {
-  if (currentPlayIndex > 0) playSongFile(currentPlayIndex - 1, allSongs[currentPlayIndex - 1]);
+  if (currentPlayIndex > 0) playSongFile(currentPlayIndex - 1, visibleSongs[currentPlayIndex - 1]);
 });
 document.getElementById('miniNext').addEventListener('click', function() {
-  if (currentPlayIndex < allSongs.length - 1) playSongFile(currentPlayIndex + 1, allSongs[currentPlayIndex + 1]);
+  if (currentPlayIndex < visibleSongs.length - 1) playSongFile(currentPlayIndex + 1, visibleSongs[currentPlayIndex + 1]);
 });
 document.getElementById('miniProgressWrap').addEventListener('click', function(e) {
   if (!audio.duration) return;
