@@ -106,26 +106,42 @@ def clean_youtube_title(title: str) -> str:
     return title.strip()
 
 
-def lookup_song_metadata(title: str) -> dict | None:
+def lookup_song_metadata(title: str, artist: str = "") -> dict | None:
     """Use ytmusicapi to look up real song metadata from a YouTube title.
+    When artist is provided, searches '{artist} {title}' first to match cover
+    versions; falls back to title-only if no artist match is found.
     Returns dict with keys: title, artist, album  or None on failure."""
     try:
         from ytmusicapi import YTMusic
         ytm = YTMusic()
-        # Clean the title first to improve search accuracy
         cleaned = clean_youtube_title(title)
+
+        def _parse(result: dict) -> dict:
+            artists = [a.get('name', '') for a in result.get('artists', [])]
+            album_obj = result.get('album', {})
+            album_name = album_obj.get('name', '') if isinstance(album_obj, dict) else ''
+            return {
+                'title': result.get('title', '') or cleaned,
+                'artist': ', '.join(artists) if artists else '',
+                'album': album_name or '',
+            }
+
+        # If we have an uploader, try "{artist} {title}" first so covers/live
+        # versions match their own release rather than the original artist.
+        if artist:
+            results = ytm.search(f"{artist} {cleaned}", filter="songs", limit=5)
+            artist_lower = artist.lower()
+            for r in results:
+                r_artists = [a.get('name', '').lower() for a in r.get('artists', [])]
+                if any(artist_lower in ra or ra in artist_lower for ra in r_artists):
+                    print(f"[lookup] Matched cover via uploader: {artist} — {cleaned}")
+                    return _parse(r)
+
+        # Fall back to title-only search
         results = ytm.search(cleaned, filter="songs", limit=3)
         if not results:
             return None
-        best = results[0]
-        artists = [a.get('name', '') for a in best.get('artists', [])]
-        album_obj = best.get('album', {})
-        album_name = album_obj.get('name', '') if isinstance(album_obj, dict) else ''
-        return {
-            'title': best.get('title', '') or cleaned,
-            'artist': ', '.join(artists) if artists else '',
-            'album': album_name or '',
-        }
+        return _parse(results[0])
     except Exception as e:
         print(f"[lookup_song_metadata] Failed: {e}")
         return None
@@ -208,31 +224,31 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                 raw_artist = info.get('artist') or info.get('uploader') or ''
                 ext = 'mp3'
 
-                # Use ytmusicapi to look up real song metadata
+                # Use ytmusicapi to clean title and get album — but NOT artist.
+                # For YouTube URL downloads the uploader IS the correct artist
+                # (covers/live versions would get wrongly tagged with the original artist).
                 update_task(task_id, message="Looking up real song info...")
-                lookup = lookup_song_metadata(raw_title)
+                lookup = lookup_song_metadata(raw_title, artist=raw_artist)
 
                 if lookup:
                     title = lookup['title']
-                    artist = lookup['artist']
+                    # Keep uploader as artist for YouTube URLs; ytmusicapi would return
+                    # the original artist and overwrite the cover artist.
+                    artist = raw_artist or lookup['artist']
                     album = lookup['album']
                 else:
-                    # Fallback: strip YouTube noise, use raw uploader as artist
                     title = clean_youtube_title(raw_title)
                     artist = raw_artist
                     album = info.get('album') or ''
 
                 # Fetch external metadata (iTunes -> Deezer -> MusicBrainz)
-                # ytmusicapi is primary; external APIs fill gaps and provide cover
                 update_task(task_id, message="Fetching metadata from external APIs...")
                 youtube_thumb = info.get('thumbnail', '')
                 ext_meta = fetch_external_metadata(title, artist)
 
-                # Merge: prefer ytmusicapi, fill gaps from external
+                # Merge: fill gaps only — never overwrite artist for YouTube URL downloads
                 if not title or title == raw_title:
                     title = ext_meta.get("title") or title
-                if not artist or artist == raw_artist:
-                    artist = ext_meta.get("artist") or artist
                 if not album:
                     album = ext_meta.get("album") or album
                 track = ext_meta.get("track") or info.get('track_number') or info.get('playlist_index') or 0
