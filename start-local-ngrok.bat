@@ -9,7 +9,7 @@ if errorlevel 1 (
 )
 
 echo Starting Flask app (app.py) on port 5169...
-start "" /b python app.py
+start "" /b py app.py
 
 echo Starting ngrok tunnel to 127.0.0.1:5169 (avoid IPv6 ::1)...
 ngrok http 127.0.0.1:5169
