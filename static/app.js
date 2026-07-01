@@ -85,9 +85,15 @@ function toggleMobileNav() {
 }
 
 // ── Textarea auto-resize ──────────────────────
-songInput.addEventListener('input', () => {
-  songInput.style.height = 'auto';
-  songInput.style.height = Math.min(songInput.scrollHeight, 200) + 'px';
+function adjustTextarea() {
+  songInput.style.height = '44px'; // Reset to min height
+  const newHeight = Math.min(songInput.scrollHeight, 200);
+  songInput.style.height = newHeight + 'px';
+}
+
+songInput.addEventListener('input', adjustTextarea);
+songInput.addEventListener('paste', () => {
+  setTimeout(adjustTextarea, 10);
 });
 songInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -95,6 +101,9 @@ songInput.addEventListener('keydown', e => {
     startDownload(e);
   }
 });
+
+// Initial adjustment
+adjustTextarea();
 
 // ── Duplicate Modal ───────────────────────────
 function showModal(title, msg, duplicates, onConfirm) {
@@ -369,9 +378,8 @@ function renderLibrary(songs) {
       <div class="song-card ${isPlaying ? 'is-playing' : ''}" id="card-${i}" data-filename="${esc(s)}" style="animation-delay:${Math.min(i * 12, 120)}ms">
         <div class="song-cover-wrapper">
           <div class="song-actions">
-            <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" data-tooltip="Rename" aria-label="Rename ${esc(title)}">&#9998;</button>
-            <button class="song-action-btn edit" onclick="openEditModal(${i})" data-tooltip="Edit metadata" aria-label="Edit metadata for ${esc(title)}">&#9881;</button>
-            <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" data-tooltip="Delete" aria-label="Delete ${esc(title)}">&#128465;</button>
+            <button class="song-action-btn edit" onclick="openEditModal(${i})" aria-label="Edit metadata for ${esc(title)}">&#9881;</button>
+            <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" aria-label="Delete ${esc(title)}">&#128465;</button>
           </div>
           <button class="play-overlay ${isPlaying ? 'playing' : ''}" onclick="playSongFile(${i}, '${esc(s)}')" data-tooltip="${isPlaying ? 'Pause' : 'Play'}" aria-label="${isPlaying ? 'Pause' : 'Play'} ${esc(title)}">${isPlaying ? '\u23F8' : '\u25B6'}</button>
           <div class="song-cover">
@@ -391,55 +399,16 @@ function renderLibrary(songs) {
 
 function filterLibrary() {
   const q = document.getElementById('searchBox').value.trim().toLowerCase();
-  if (!q) {
-    renderLibrary(allSongs);
+  let filtered = allSongs;
+  
+  if (q) {
+    filtered = allSongs.filter(s => s.toLowerCase().includes(q));
+    document.getElementById('libraryCount').textContent = `${filtered.length} of ${allSongs.length} songs`;
+  } else {
     document.getElementById('libraryCount').textContent = `${allSongs.length} songs in library`;
-    return;
   }
-  const filtered = allSongs.filter(s => s.toLowerCase().includes(q));
+  
   renderLibrary(filtered);
-  document.getElementById('libraryCount').textContent = `${filtered.length} of ${allSongs.length} songs`;
-}
-
-// ── Rename ────────────────────────────────────
-function startRename(idx, filename) {
-  const info = document.getElementById('info-' + idx);
-  if (!info) return;
-  const currentName = filename.replace(/\.mp3$/i, '');
-  info.innerHTML = `
-    <input type="text" class="rename-input" id="renameInput-${idx}" value="${esc(currentName)}">
-    <div class="rename-actions">
-      <button class="r-save" onclick="saveRename(${idx}, '${esc(filename)}')">Save</button>
-      <button class="r-cancel" onclick="filterLibrary()">Cancel</button>
-    </div>
-  `;
-  const input = document.getElementById('renameInput-' + idx);
-  input.focus();
-  input.select();
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') saveRename(idx, filename);
-    if (e.key === 'Escape') filterLibrary();
-  });
-}
-
-async function saveRename(idx, oldFilename) {
-  const input = document.getElementById('renameInput-' + idx);
-  if (!input) return;
-  const newName = input.value.trim();
-  if (!newName) return;
-  try {
-    const res = await fetch('/api/rename', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ old_name: oldFilename, new_name: newName + '.mp3' }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    showToast('Renamed successfully', 'success');
-    loadSongs({ silent: true, force: true });
-  } catch (e) {
-    showToast('Rename failed: ' + e.message, 'error');
-  }
 }
 
 // ── Delete ────────────────────────────────────
@@ -478,22 +447,6 @@ async function deleteSong(filename) {
 }
 
 // ── Enrich ────────────────────────────────────
-async function enrichAll() {
-  const btn = document.getElementById('enrichBtn');
-  setButtonLoading(btn, true, 'Enriching');
-  try {
-    const res = await fetch('/api/enrich-all', { method: 'POST' });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    showToast(`Enriched ${data.enriched} songs`, 'success');
-    loadSongs({ silent: true, force: true });
-  } catch (e) {
-    showToast('Enrich failed: ' + e.message, 'error');
-  } finally {
-    setButtonLoading(btn, false, 'Enrich');
-  }
-}
-
 // ── Upload Modal ──────────────────────────────
 function openUploadModal() {
   document.getElementById('uploadMp3Input').value = '';

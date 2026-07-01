@@ -218,15 +218,16 @@ body{
 .input-section{width:100%;max-width:680px;margin:0 auto}
 .input-label{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px}
 .input-label .hint{font-weight:400;font-size:12px;color:var(--ink-muted-48)}
-.input-row{display:flex;gap:12px;align-items:flex-end}
+.input-row{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
 .input-row textarea{
-  flex:1;background:var(--canvas);border:1px solid rgba(0,0,0,0.08);
-  border-radius:9999px;padding:12px 20px;font-size:17px;color:var(--ink);
-  font-family:var(--font-body);outline:none;resize:none;
-  min-height:48px;max-height:200px;
-  transition:border-color .2s, box-shadow .2s;line-height:1.47;
+  flex:1;min-width:200px;background:var(--canvas);border:1px solid rgba(0,0,0,0.08);
+  border-radius:12px;padding:12px 16px;font-size:16px;color:var(--ink);
+  font-family:var(--font-body);outline:none;resize:vertical;
+  min-height:44px;max-height:200px;height:auto;
+  transition:border-color .2s, box-shadow .2s;line-height:1.5;
+  overflow:hidden;word-wrap:break-word;overflow-wrap:break-word;
 }
-.input-row textarea:focus{border-color:var(--primary-focus);box-shadow:0 0 0 3px rgba(0,113,227,0.15)}
+.input-row textarea:focus{border-color:var(--primary-focus);box-shadow:0 0 0 3px rgba(0,113,227,0.15);min-height:48px}
 .input-row textarea::placeholder{color:var(--ink-muted-48)}
 
 /* ── Stats ── */
@@ -357,21 +358,11 @@ body{
   box-shadow:0 4px 10px rgba(0,0,0,.1);
 }
 .song-action-btn:hover{transform:scale(1.12);box-shadow:0 6px 14px rgba(0,0,0,.15)}
-.song-action-btn[data-tooltip]::after,.play-overlay[data-tooltip]::after{bottom:calc(100% + 7px)}
-.song-action-btn.rename{color:var(--primary)}
-.song-action-btn.rename:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.song-action-btn[data-tooltip]::after,.play-overlay[data-tooltip]::after{display:none}
 .song-action-btn.edit{color:var(--green)}
 .song-action-btn.edit:hover{background:var(--green);color:#fff;border-color:var(--green)}
 .song-action-btn.delete{color:var(--red)}
 .song-action-btn.delete:hover{background:var(--red);color:#fff;border-color:var(--red)}
-.rename-input{width:100%;background:var(--canvas-parchment);border:2px solid var(--primary-focus);border-radius:8px;padding:6px 10px;font-size:14px;color:var(--ink);font-family:var(--font-body);outline:none;margin-bottom:6px}
-.rename-actions{display:flex;gap:6px}
-.rename-actions button{flex:1;border:none;border-radius:9999px;padding:6px 0;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-body);transition:background-color .15s, transform .15s}
-.rename-actions button:active{transform:scale(0.95)}
-.rename-actions .r-save{background:var(--primary);color:#fff}
-.rename-actions .r-save:hover{background:#0077ed}
-.rename-actions .r-cancel{background:var(--divider-soft);color:var(--ink)}
-.rename-actions .r-cancel:hover{background:var(--hairline)}
 .song-cover{width:100%;aspect-ratio:1;background:var(--canvas-parchment);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--ink-muted-48);position:relative;overflow:hidden}
 .song-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.45) 100%);opacity:0;transition:opacity .3s ease}
 .song-card:hover .song-cover::after{opacity:1}
@@ -506,46 +497,90 @@ body{
   .hero-headline{font-size:42px}
   .hero-tagline{font-size:20px}
   .tile{padding:48px 20px}
-  .library-header{gap:8px;flex-direction:column}
+  .library-header{gap:8px;flex-wrap:wrap}
   .library-sort-controls{width:100%;gap:8px}
   .sort-select{flex:1}
-  .song-grid{grid-template-columns:repeat(auto-fill, minmax(158px, 1fr));gap:14px}
+  .song-grid{grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:14px}
   .input-row{flex-direction:column}
-}
   .input-row textarea{border-radius:16px}
   .input-row .btn-pill-sm{width:100%;border-radius:16px}
 }
+@media(max-width:768px){
+  .tile{padding:40px 16px}
+  .song-grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px}
+  .library-header{flex-direction:column;gap:8px}
+  .library-header .search-box{width:100%}
+  .library-sort-controls{width:100%}
+  .library-header .btn-pill-sm{flex:1}
+  .song-action-btn{width:38px;height:38px;font-size:12px}
+  .song-actions{gap:5px}
+}
 @media(max-width:640px){
   body{font-size:15px}
-  .global-nav{padding:0 16px}
+  .global-nav{padding:0 16px;height:56px}
   .global-nav .nav-links.show{align-items:stretch;gap:4px}
   .main{padding-bottom:88px}
-  .hero-headline{font-size:36px}
-  .hero-tagline{font-size:18px}
+  .tile{padding:32px 12px}
+  .tile-inner{padding:0 8px}
+  .hero-headline{font-size:36px;margin-bottom:12px}
+  .hero-tagline{font-size:18px;margin-bottom:24px}
   .hero-tagline br{display:none}
-  .song-grid{grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px}
+  .input-section{max-width:100%;padding:0}
+  .input-row{gap:8px;flex-wrap:wrap}
+  .input-row textarea{min-width:100%;border-radius:12px;font-size:16px;padding:10px 14px;min-height:40px}
+  .input-row .btn-pill-sm{min-width:100%;flex:1 1 auto;padding:10px 16px;font-size:14px}
+  .song-grid{grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:10px;padding:0 4px}
+  .song-card{border-radius:12px}
+  .song-cover{border-radius:12px 12px 0 0}
+  .song-info{padding:8px 10px}
+  .song-info .song-name{font-size:13px}
+  .song-info .song-artist{font-size:11px}
+  .library-header{position:sticky;top:56px;z-index:20;background:rgba(243,244,246,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);margin:0 -12px 12px;padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);gap:6px}
+  .library-header .search-box{font-size:14px;padding:8px 12px;border-radius:8px;min-width:0;flex:1}
+  .library-sort-controls{width:100%;gap:6px}
+  .sort-select{font-size:13px;padding:8px 10px;border-radius:8px}
+  .library-header .btn-pill-sm{width:40px;height:40px;padding:0;border-radius:10px;font-size:0}
+  .library-header .btn-pill-sm.loading{min-width:40px}
+  .library-header .btn-pill-sm .btn-spinner{width:14px;height:14px;margin-right:0}
+  .library-header .btn-label{display:none}
+  .library-count{font-size:12px;margin-bottom:8px}
   .queue-header{flex-direction:column;gap:10px;align-items:flex-start}
   .queue-actions{width:100%;justify-content:flex-start}
-  .queue-actions .btn{flex:0 0 44px}
-  .row{padding:16px;gap:12px}
-  .row-title{white-space:normal}
-  .row-msg{white-space:normal}
-  .row-remove{min-width:44px;min-height:44px}
-  .stat{font-size:11px;padding:8px 0}
-  .library-header{position:sticky;top:68px;z-index:20;background:rgba(243,244,246,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);margin:-4px -16px 16px;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.06)}
-  .library-header .search-box{min-width:0}
-  .library-header .btn-pill-sm{width:44px;height:44px;padding:0;border-radius:12px}
-  .library-header .btn-pill-sm.loading{min-width:44px}
-  .library-header .btn-pill-sm .btn-spinner{margin-right:0}
-  .library-header .btn-label{display:none}
-  .song-actions{opacity:1;transform:translateY(0)}
-  .song-action-btn{width:36px;height:36px}
-  .modal{padding:24px}
+  .queue-actions .btn{flex:0 0 40px}
+  .row{padding:12px;gap:10px}
+  .row-icon{width:32px;height:32px;font-size:14px}
+  .row-title{font-size:14px;white-space:normal}
+  .row-msg{font-size:12px;white-space:normal}
+  .row-remove{min-width:40px;min-height:40px;font-size:18px}
+  .stat{font-size:11px;padding:6px 0}
+  .song-actions{opacity:1;transform:translateY(0);gap:4px;top:8px;right:8px}
+  .song-action-btn{width:32px;height:32px;font-size:11px;border-radius:50%}
+  .play-overlay{width:38px;height:38px;bottom:8px;right:8px;font-size:16px}
+  .modal{padding:20px;width:95%;max-width:360px}
   .modal-actions{flex-direction:column}
   .modal-actions button{width:100%}
   .confirm-actions{flex-direction:column}
   .confirm-actions button{width:100%}
-  .footer{padding:32px 16px 24px}
+  .edit-box{padding:20px;width:95%;max-width:360px}
+  .edit-field label{font-size:11px}
+  .edit-field input[type=text]{font-size:14px;padding:8px 10px}
+  .footer{padding:24px 12px 16px;font-size:11px}
+}
+@media(max-width:480px){
+  .hero-headline{font-size:28px}
+  .hero-tagline{font-size:15px}
+  .song-grid{grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));gap:8px;padding:0}
+  .song-card{border-radius:10px}
+  .song-cover img{border-radius:10px 10px 0 0}
+  .song-info{padding:6px 8px}
+  .song-info .song-name{font-size:12px;margin-bottom:2px}
+  .song-info .song-artist{font-size:10px}
+  .input-row textarea{min-height:36px;font-size:14px;padding:8px 12px}
+  .input-row .btn-pill-sm{padding:8px 12px;font-size:13px}
+  .library-header{top:56px;margin:0 -12px 8px;padding:8px 10px}
+  .library-header .search-box{font-size:13px;padding:7px 10px}
+  .sort-select{font-size:12px;padding:6px 8px}
+  .mini-player-inner{padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
 }
 @media(max-width:480px){
   .hero-headline{font-size:30px}
