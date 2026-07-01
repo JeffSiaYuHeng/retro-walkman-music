@@ -79,6 +79,14 @@
       <div class="tile-inner-wide" style="max-width:1440px;margin:0 auto">
         <div class="library-header">
           <input type="text" class="search-box" id="searchBox" placeholder="Search songs..." oninput="filterLibrary()">
+          <div class="library-sort-controls">
+            <select id="sortBy" class="sort-select" onchange="filterLibrary()">
+              <option value="name-asc">Name (A→Z)</option>
+              <option value="name-desc">Name (Z→A)</option>
+              <option value="date-newest">Date (Newest)</option>
+              <option value="date-oldest">Date (Oldest)</option>
+            </select>
+          </div>
           <button class="btn btn-pill-sm" onclick="openUploadModal()" id="uploadBtn" style="flex-shrink:0;position:relative" data-tooltip="Upload album" aria-label="Upload album">
             <span class="btn-spinner" aria-hidden="true"></span>
             <span class="btn-label">Upload</span>

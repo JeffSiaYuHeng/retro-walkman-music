@@ -286,6 +286,8 @@ async function pushToGitHub() {
 }
 
 // ── Library ───────────────────────────────────
+let songsMetadata = {}; // Store file metadata for sorting
+
 function showSkeleton() {
   const grid = document.getElementById('songGrid');
   grid.innerHTML = Array(10).fill(0).map(() => `
@@ -307,6 +309,15 @@ async function loadSongs(options = {}) {
   try {
     const res = await fetch('/api/songs');
     allSongs = await res.json();
+    
+    // Load metadata for sorting by date
+    try {
+      const metaRes = await fetch('/api/songs-metadata');
+      songsMetadata = await metaRes.json();
+    } catch (e) {
+      songsMetadata = {};
+    }
+    
     songsLoaded = true;
     filterLibrary();
   } catch (e) {
@@ -315,14 +326,39 @@ async function loadSongs(options = {}) {
   }
 }
 
+function sortSongs(songs) {
+  const sortBy = document.getElementById('sortBy').value || 'name-asc';
+  const sorted = [...songs];
+  
+  if (sortBy === 'name-asc') {
+    sorted.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  } else if (sortBy === 'name-desc') {
+    sorted.sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase()));
+  } else if (sortBy === 'date-newest') {
+    sorted.sort((a, b) => {
+      const timeA = songsMetadata[a]?.modified || 0;
+      const timeB = songsMetadata[b]?.modified || 0;
+      return timeB - timeA;
+    });
+  } else if (sortBy === 'date-oldest') {
+    sorted.sort((a, b) => {
+      const timeA = songsMetadata[a]?.modified || 0;
+      const timeB = songsMetadata[b]?.modified || 0;
+      return timeA - timeB;
+    });
+  }
+  
+  return sorted;
+}
+
 function renderLibrary(songs) {
   const grid = document.getElementById('songGrid');
-  visibleSongs = songs;
-  if (!songs.length) {
+  visibleSongs = sortSongs(songs);
+  if (!visibleSongs.length) {
     grid.innerHTML = '<div class="empty">No songs yet</div>';
     return;
   }
-  grid.innerHTML = songs.map((s, i) => {
+  grid.innerHTML = visibleSongs.map((s, i) => {
     const name = s.replace(/\.mp3$/i, '');
     const parts = name.split(' - ');
     const artist = parts.length > 1 ? parts[0].trim() : '';
@@ -331,14 +367,16 @@ function renderLibrary(songs) {
     const isPlaying = currentPlayingFile === s && typeof audio !== 'undefined' && !audio.paused;
     return `
       <div class="song-card ${isPlaying ? 'is-playing' : ''}" id="card-${i}" data-filename="${esc(s)}" style="animation-delay:${Math.min(i * 12, 120)}ms">
-        <div class="song-actions">
-          <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" data-tooltip="Rename" aria-label="Rename ${esc(title)}">&#9998;</button>
-          <button class="song-action-btn edit" onclick="openEditModal(${i})" data-tooltip="Edit metadata" aria-label="Edit metadata for ${esc(title)}">&#9881;</button>
-          <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" data-tooltip="Delete" aria-label="Delete ${esc(title)}">&#128465;</button>
-        </div>
-        <button class="play-overlay ${isPlaying ? 'playing' : ''}" onclick="playSongFile(${i}, '${esc(s)}')" data-tooltip="${isPlaying ? 'Pause' : 'Play'}" aria-label="${isPlaying ? 'Pause' : 'Play'} ${esc(title)}">${isPlaying ? '\u23F8' : '\u25B6'}</button>
-        <div class="song-cover">
-          <img src="${coverUrl}" alt="${esc(title)}" onerror="this.parentElement.innerHTML='<div class=no-cover>&#127925;</div>'" loading="lazy">
+        <div class="song-cover-wrapper">
+          <div class="song-actions">
+            <button class="song-action-btn rename" onclick="startRename(${i}, '${esc(s)}')" data-tooltip="Rename" aria-label="Rename ${esc(title)}">&#9998;</button>
+            <button class="song-action-btn edit" onclick="openEditModal(${i})" data-tooltip="Edit metadata" aria-label="Edit metadata for ${esc(title)}">&#9881;</button>
+            <button class="song-action-btn delete" onclick="confirmDelete('${esc(s)}')" data-tooltip="Delete" aria-label="Delete ${esc(title)}">&#128465;</button>
+          </div>
+          <button class="play-overlay ${isPlaying ? 'playing' : ''}" onclick="playSongFile(${i}, '${esc(s)}')" data-tooltip="${isPlaying ? 'Pause' : 'Play'}" aria-label="${isPlaying ? 'Pause' : 'Play'} ${esc(title)}">${isPlaying ? '\u23F8' : '\u25B6'}</button>
+          <div class="song-cover">
+            <img src="${coverUrl}" alt="${esc(title)}" onerror="this.parentElement.innerHTML='<div class=no-cover>&#127925;</div>'" loading="lazy">
+          </div>
         </div>
         <div class="song-info" id="info-${i}">
           <div class="song-title-row">
@@ -769,6 +807,9 @@ function playSongFile(index, filename) {
 audio.addEventListener('ended', () => {
   if (currentPlayIndex < visibleSongs.length - 1) {
     playSongFile(currentPlayIndex + 1, visibleSongs[currentPlayIndex + 1]);
+  } else {
+    audio.currentTime = 0;
+    syncPlayingCards(false);
   }
 });
 audio.addEventListener('pause', () => {
@@ -778,6 +819,11 @@ audio.addEventListener('pause', () => {
 audio.addEventListener('play', () => {
   document.getElementById('miniPlay').textContent = '\u23F8';
   syncPlayingCards(true);
+});
+
+audio.addEventListener('error', () => {
+  showToast('Failed to load audio', 'error');
+  syncPlayingCards(false);
 });
 
 function syncMiniPlayerProgress() {
@@ -790,7 +836,13 @@ audio.addEventListener('loadedmetadata', syncMiniPlayerProgress);
 
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00';
-  return Math.floor(s / 60) + ':' + (Math.floor(s % 60) < 10 ? '0' : '') + Math.floor(s % 60);
+  const hours = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = Math.floor(s % 60);
+  if (hours > 0) {
+    return hours + ':' + (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+  }
+  return mins + ':' + (secs < 10 ? '0' : '') + secs;
 }
 
 document.getElementById('miniPlay').addEventListener('click', () => {
@@ -806,6 +858,23 @@ document.getElementById('miniNext').addEventListener('click', () => {
 document.getElementById('miniProgressWrap').addEventListener('click', e => {
   if (!audio.duration) return;
   audio.currentTime = ((e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.getBoundingClientRect().width) * audio.duration;
+});
+
+// Keyboard shortcuts for playback
+document.addEventListener('keydown', e => {
+  if (!audio.src) return;
+  if ((e.code === 'Space' || e.key === ' ') && e.target === document.body) {
+    e.preventDefault();
+    audio.paused ? audio.play() : audio.pause();
+  }
+  if (e.code === 'ArrowRight' && e.ctrlKey) {
+    e.preventDefault();
+    if (currentPlayIndex < visibleSongs.length - 1) playSongFile(currentPlayIndex + 1, visibleSongs[currentPlayIndex + 1]);
+  }
+  if (e.code === 'ArrowLeft' && e.ctrlKey) {
+    e.preventDefault();
+    if (currentPlayIndex > 0) playSongFile(currentPlayIndex - 1, visibleSongs[currentPlayIndex - 1]);
+  }
 });
 
 // ── Init ──────────────────────────────────────
