@@ -655,6 +655,22 @@ def list_songs():
     return jsonify(files)
 
 
+@app.route("/api/songs-metadata")
+def songs_metadata():
+    """Return metadata (modification time) for all songs."""
+    SONGS_DIR.mkdir(exist_ok=True)
+    metadata = {}
+    for f in os.listdir(SONGS_DIR):
+        if f.lower().endswith(".mp3"):
+            file_path = SONGS_DIR / f
+            try:
+                mtime = os.path.getmtime(file_path)
+                metadata[f] = {"modified": int(mtime * 1000)}  # Convert to milliseconds
+            except Exception as e:
+                metadata[f] = {"modified": 0}
+    return jsonify(metadata)
+
+
 @app.route("/api/check-duplicate", methods=["POST"])
 def check_duplicate():
     """Check if songs already exist in library."""
