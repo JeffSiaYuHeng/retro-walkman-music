@@ -398,6 +398,8 @@ def write_id3_tags(mp3_path: Path, title: str = "", artist: str = "", album: str
             audio.tags.setall('TRCK', [TRCK(encoding=3, text=str(track))])
         if year:
             audio.tags.setall('TDRC', [TDRC(encoding=3, text=str(year))])
+        else:
+            audio.tags.delall('TDRC')
         if genre:
             audio.tags.setall('TCON', [TCON(encoding=3, text=genre)])
 
@@ -1151,6 +1153,154 @@ def delete_song():
         return jsonify({"error": str(e)}), 500
 
 
+ILLEGAL_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*]')
+MAX_MP3_BYTES = 50 * 1024 * 1024   # 50 MB
+MAX_JPG_BYTES = 10 * 1024 * 1024   # 10 MB
+
+
+@app.route("/api/upload", methods=["POST"])
+def upload_song():
+    """Upload an MP3 (required) and optional JPG cover, then regenerate catalog and push."""
+    mp3_file = request.files.get("mp3")
+    jpg_file = request.files.get("jpg")
+
+    # ── Validate MP3 ──────────────────────────────────────────────────────
+    if not mp3_file or mp3_file.filename == "":
+        return jsonify({"error": "An MP3 file is required"}), 400
+
+    mp3_name = mp3_file.filename
+    if not mp3_name.lower().endswith(".mp3"):
+        return jsonify({"error": "Audio file must be a .mp3"}), 400
+
+    mp3_data = mp3_file.read()
+    if len(mp3_data) > MAX_MP3_BYTES:
+        return jsonify({"error": "MP3 file exceeds the 50 MB limit"}), 400
+
+    # ── Validate JPG (optional) ───────────────────────────────────────────
+    jpg_data = None
+    if jpg_file and jpg_file.filename != "":
+        if not jpg_file.filename.lower().endswith((".jpg", ".jpeg")):
+            return jsonify({"error": "Cover image must be a .jpg or .jpeg"}), 400
+        jpg_data = jpg_file.read()
+        if len(jpg_data) > MAX_JPG_BYTES:
+            return jsonify({"error": "Cover image exceeds the 10 MB limit"}), 400
+
+    SONGS_DIR.mkdir(exist_ok=True)
+    stem = mp3_name[:-4]  # strip .mp3
+    try:
+        mp3_path = SONGS_DIR / mp3_name
+        mp3_path.write_bytes(mp3_data)
+
+        if jpg_data is not None:
+            jpg_path = SONGS_DIR / f"{stem}.jpg"
+            jpg_path.write_bytes(jpg_data)
+            # Embed cover into the MP3
+            _embed_single(jpg_path, mp3_path, "image/jpeg", force=True)
+    except OSError as e:
+        return jsonify({"error": f"Failed to save file: {e}"}), 500
+
+    # ── Regenerate catalog ────────────────────────────────────────────────
+    if not _do_generate():
+        return jsonify({"error": "catalog generation failed"}), 500
+
+    # ── Push to GitHub ────────────────────────────────────────────────────
+    push_result = git_push()
+    if push_result["ok"]:
+        return jsonify({"status": push_result["status"], "filename": stem})
+    else:
+        return jsonify({"status": "saved", "push_status": "failed",
+                        "message": push_result["message"], "filename": stem})
+
+
+@app.route("/api/edit", methods=["POST"])
+def edit_song():
+    """Edit ID3 metadata for a song; optionally rename the file pair and replace cover."""
+    original_stem = request.form.get("original_stem", "").strip()
+    title   = request.form.get("title",  "").strip()
+    artist  = request.form.get("artist", "").strip()
+    album   = request.form.get("album",  "").strip()
+    year    = request.form.get("year",   "").strip()
+    genre   = request.form.get("genre",  "").strip()
+    new_cover = request.files.get("jpg")
+
+    # ── Validate required fields ──────────────────────────────────────────
+    if not original_stem:
+        return jsonify({"error": "original_stem is required"}), 400
+
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+    if not artist:
+        return jsonify({"error": "artist is required"}), 400
+
+    if ILLEGAL_FILENAME_CHARS.search(title) or ILLEGAL_FILENAME_CHARS.search(artist):
+        return jsonify({"error": "title and artist must not contain < > : \" / \\ | ? *"}), 400
+
+    new_stem = f"{artist} - {title}"
+    if len(new_stem) > 200:
+        return jsonify({"error": "Combined artist and title is too long (max 200 chars)"}), 400
+
+    if year and (not year.isdigit() or len(year) != 4):
+        return jsonify({"error": "year must be a 4-digit number or empty"}), 400
+
+    # ── Validate optional cover ───────────────────────────────────────────
+    new_cover_data = None
+    if new_cover and new_cover.filename != "":
+        if not new_cover.filename.lower().endswith((".jpg", ".jpeg")):
+            return jsonify({"error": "Cover image must be a .jpg or .jpeg"}), 400
+        new_cover_data = new_cover.read()
+        if len(new_cover_data) > MAX_JPG_BYTES:
+            return jsonify({"error": "Cover image exceeds the 10 MB limit"}), 400
+
+    SONGS_DIR.mkdir(exist_ok=True)
+    old_mp3 = SONGS_DIR / f"{original_stem}.mp3"
+    old_jpg = SONGS_DIR / f"{original_stem}.jpg"
+
+    if not old_mp3.exists():
+        return jsonify({"error": "Song file not found"}), 404
+
+    new_mp3 = SONGS_DIR / f"{new_stem}.mp3"
+    new_jpg = SONGS_DIR / f"{new_stem}.jpg"
+
+    # ── Conflict check (rename only) ──────────────────────────────────────
+    if new_stem != original_stem and new_mp3.exists():
+        return jsonify({"error": "a song with that artist and title already exists"}), 409
+
+    try:
+        # ── Write new cover if provided ───────────────────────────────────
+        if new_cover_data is not None:
+            cover_target = old_jpg  # write to old path first; may be renamed below
+            cover_target.write_bytes(new_cover_data)
+            _embed_single(cover_target, old_mp3, "image/jpeg", force=True)
+
+        # ── Write ID3 tags ────────────────────────────────────────────────
+        write_id3_tags(old_mp3, title=title, artist=artist, album=album,
+                       year=year, genre=genre)
+
+        # ── Rename file pair if stem changed ──────────────────────────────
+        if new_stem != original_stem:
+            old_mp3.rename(new_mp3)
+            if old_jpg.exists():
+                old_jpg.rename(new_jpg)
+                _embed_single(new_jpg, new_mp3, "image/jpeg", force=True)
+
+    except OSError as e:
+        return jsonify({"error": f"Filesystem error: {e}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    # ── Regenerate catalog ────────────────────────────────────────────────
+    if not _do_generate():
+        return jsonify({"error": "catalog generation failed"}), 500
+
+    # ── Push to GitHub ────────────────────────────────────────────────────
+    push_result = git_push()
+    if push_result["ok"]:
+        return jsonify({"status": push_result["status"], "filename": new_stem})
+    else:
+        return jsonify({"error": f"Push failed: {push_result['message']}",
+                        "filename": new_stem}), 500
+
+
 @app.route("/api/generate", methods=["POST"])
 def generate():
     run_generate_json()
@@ -1229,6 +1379,11 @@ def git_status():
         return jsonify({"changes": changes, "clean": changes == 0})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/songs.json")
+def serve_songs_json():
+    return send_from_directory(str(BASE_DIR), "songs.json")
 
 
 @app.route("/songs/<path:filename>")
