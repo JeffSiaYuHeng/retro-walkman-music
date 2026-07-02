@@ -176,7 +176,7 @@ body{
 .btn-ghost:hover{border-color:var(--ink-muted-48);color:var(--ink)}
 .icon-btn{width:36px;height:36px;border-radius:10px;padding:0;position:relative;flex-shrink:0}
 .icon-btn .icon{font-size:16px;line-height:1}
-.icon-btn.loading .icon{animation:pulse 1s ease infinite}
+.icon-btn.loading .icon{animation:none}
 [data-tooltip]{position:relative}
 [data-tooltip]::after{
   content:attr(data-tooltip);
@@ -196,13 +196,8 @@ body{
 }
 .btn-pill-sm:hover{background:linear-gradient(135deg, #0060e0 0%, #0088ee 100%);box-shadow:0 6px 20px rgba(0, 112, 243, 0.5);transform:translateY(-2px)}
 .btn-pill-sm:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-pill-sm .btn-spinner{
-  width:16px;height:16px;border:2.5px solid rgba(255,255,255,.25);
-  border-top-color:#fff;border-right-color:#fff;border-radius:50%;
-  margin-right:8px;display:none;
-  animation:spin .65s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-}
-.btn-pill-sm.loading .btn-spinner{display:inline-block}
+.btn-pill-sm .btn-spinner{display:none}
+.btn-pill-sm.loading .btn-spinner{display:none}
 .btn-pill-sm.loading{min-width:120px}
 .btn-icon{
   width:44px;height:44px;border-radius:50%;background:rgba(210,210,215,0.64);
@@ -259,8 +254,8 @@ body{
 @keyframes fadeUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
 .row-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-top:2px;transition:background-color .2s, color .2s, transform .2s, opacity .2s}
 .row-icon.queued{background:rgba(122,122,122,.08);color:var(--ink-muted-48)}
-.row-icon.downloading{background:rgba(0,102,204,.08);color:var(--primary);animation:simpleRotate 1.5s linear infinite}
-.row-icon.generating{background:rgba(255,149,0,.08);color:var(--orange);animation:simplePulse 1.2s ease infinite}
+.row-icon.downloading{background:rgba(0,102,204,.08);color:var(--primary)}
+.row-icon.generating{background:rgba(255,149,0,.08);color:var(--orange)}
 .row-icon.done{background:rgba(52,199,89,.08);color:var(--green);animation:simplePop .4s ease}
 .row-icon.failed{background:rgba(255,59,48,.08);color:var(--red)}
 @keyframes simplePulse{0%,100%{opacity:0.6}50%{opacity:1}}
@@ -431,8 +426,8 @@ body{
 .btn-edit-save:hover{background:#0077ed}
 .btn-edit-save:active{transform:scale(0.95)}
 .btn-edit-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-edit-save .save-spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;display:none;animation:spin .8s linear infinite}
-.btn-edit-save.loading .save-spinner{display:inline-block}
+.btn-edit-save .save-spinner{display:none}
+.btn-edit-save.loading .save-spinner{display:none}
 .btn-edit-save.loading .save-label{display:none}
 
 /* ── Toast ── */
@@ -567,7 +562,7 @@ body{
   .sort-select{font-size:13px;padding:8px 10px;border-radius:8px}
   .library-header .btn-pill-sm{width:40px;height:40px;padding:0;border-radius:10px;font-size:0}
   .library-header .btn-pill-sm.loading{min-width:40px}
-  .library-header .btn-pill-sm .btn-spinner{width:14px;height:14px;margin-right:0}
+  .library-header .btn-pill-sm .btn-spinner{display:none}
   .library-header .btn-label{display:none}
   .library-count{font-size:12px;margin-bottom:8px}
   .queue-header{flex-direction:column;gap:10px;align-items:flex-start}

@@ -3,11 +3,17 @@ const songInput = document.getElementById('songInput');
 const downloadBtn = document.getElementById('downloadBtn');
 const toastContainer = document.getElementById('toastContainer');
 
-let tasks = {};
+// Load persisted tasks from localStorage
+let tasks = JSON.parse(localStorage.getItem('tasks') || '{}');
 let allSongs = [];
 let visibleSongs = [];
 let songsLoaded = false;
 let currentPlayingFile = '';
+
+// Save tasks to localStorage whenever they change
+function saveTasks() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
 
 // ── Utilities ─────────────────────────────────
 function esc(s) {
@@ -172,6 +178,7 @@ async function doDownload(song) {
       tasks[item.id] = { id: item.id, song: item.song, input_type: item.input_type, method: '', status: 'queued', message: 'Queued...', toastShown: {} };
       pollStatus(item.id);
     });
+    saveTasks();
     renderQueue();
     if (items.length > 1) {
       showToast(`Queued ${items.length} songs`, 'info');
@@ -192,6 +199,7 @@ async function pollStatus(id) {
       const res = await fetch(`/api/status/${id}`);
       const data = await res.json();
       tasks[id] = { ...tasks[id], ...data };
+      saveTasks();
       
       // Show toast for status changes
       if (!tasks[id].toastShown) tasks[id].toastShown = {};
@@ -287,12 +295,14 @@ function renderQueue() {
 }
 
 function removeTask(id) {
+  delete tasks[id];
+  saveTasks();
   const el = document.getElementById('row-' + id);
   if (el) {
     el.style.animation = 'fadeUp .2s ease forwards';
-    setTimeout(() => { delete tasks[id]; renderQueue(); }, 200);
+    setTimeout(() => { renderQueue(); }, 200);
   } else {
-    delete tasks[id]; renderQueue();
+    renderQueue();
   }
 }
 
@@ -300,10 +310,12 @@ function clearDone() {
   const toRemove = Object.keys(tasks).filter(id => tasks[id].status === 'done' || tasks[id].status === 'failed');
   if (!toRemove.length) return;
   toRemove.forEach(id => {
+    delete tasks[id];
     const el = document.getElementById('row-' + id);
     if (el) el.style.animation = 'fadeUp .2s ease forwards';
   });
-  setTimeout(() => { toRemove.forEach(id => delete tasks[id]); renderQueue(); }, 200);
+  saveTasks();
+  setTimeout(() => { renderQueue(); }, 200);
 }
 
 // ── Download Metadata ─────────────────────────
@@ -995,3 +1007,4 @@ document.addEventListener('keydown', e => {
 
 // ── Init ──────────────────────────────────────
 loadSongs({ silent: true });
+renderQueue();
