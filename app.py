@@ -68,8 +68,8 @@ def run_cmd(cmd: list[str], task_id: str, timeout: int = 120) -> int:
         return -1
 
 
-def try_ytmdl(query: str, input_type: str, task_id: str) -> bool:
-    """Try downloading with ytmdl. Returns True on success."""
+def try_ytmdl(query: str, input_type: str, task_id: str) -> tuple[bool, str]:
+    """Try downloading with ytmdl. Returns (success, filename)."""
     update_task(task_id, method="ytmdl")
     YTMDL = r"C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Scripts\ytmdl.exe"
     cmd = [
@@ -85,10 +85,24 @@ def try_ytmdl(query: str, input_type: str, task_id: str) -> bool:
         cmd += [query]
 
     try:
+        # Get list of files before download
+        files_before = set(os.listdir(SONGS_DIR)) if SONGS_DIR.exists() else set()
+        
         code = run_cmd(cmd, task_id, timeout=60)  # 60s timeout
-        return code == 0
+        
+        if code == 0:
+            # Find the newly created mp3 file
+            files_after = set(os.listdir(SONGS_DIR)) if SONGS_DIR.exists() else set()
+            new_files = files_after - files_before
+            mp3_files = [f for f in new_files if f.lower().endswith('.mp3')]
+            
+            if mp3_files:
+                # Return the first (or most likely only) new mp3 file
+                return True, mp3_files[0]
+            return True, ""
+        return False, ""
     except FileNotFoundError:
-        return False
+        return False, ""
 
 
 def clean_youtube_title(title: str) -> str:
@@ -161,8 +175,8 @@ def lookup_song_metadata(title: str, artist: str = "", prefer_chinese: bool = Fa
         return None
 
 
-def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
-    """Fallback: use yt-dlp directly with thumbnail. Returns True on success."""
+def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> tuple[bool, str]:
+    """Fallback: use yt-dlp directly with thumbnail. Returns (success, filename)."""
     update_task(task_id, method="yt-dlp", message="Retrying with yt-dlp...")
 
     if input_type == "youtube":
@@ -224,7 +238,7 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
 
         if process.returncode != 0:
             print(f"yt-dlp failed with return code {process.returncode}")
-            return False
+            return False, ""
 
         # Parse metadata and rename file
         if json_output:
@@ -312,12 +326,13 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> bool:
                     download_and_embed_cover(cover_url, f"{clean_name}.mp3")
 
                 update_task(task_id, message=f"Saved as: {clean_name}.{ext}")
+                return True, f"{clean_name}.{ext}"
             except json.JSONDecodeError:
                 pass
 
-        return True
+        return True, ""
     except FileNotFoundError:
-        return False
+        return False, ""
 
 
 def embed_covers(filename: str = None):
@@ -434,7 +449,7 @@ def _run_download_inner(task_id: str, query: str):
 
         # Skip ytmdl (doesn't work without JS runtime on this system)
         # Go straight to yt-dlp
-        success = try_ytdlp_fallback(query, input_type, task_id)
+        success, filename = try_ytdlp_fallback(query, input_type, task_id)
 
         # Fallback: if YouTube URL failed, try ytsearch1
         if not success and input_type == "youtube":
@@ -452,18 +467,18 @@ def _run_download_inner(task_id: str, query: str):
                     video_id = parsed.path.split('/shorts/')[-1].split('/')[0]
             if video_id:
                 # Retry with the direct video ID URL instead of a text search
-                success = try_ytdlp_fallback(f"https://www.youtube.com/watch?v={video_id}", "youtube", task_id)
+                success, filename = try_ytdlp_fallback(f"https://www.youtube.com/watch?v={video_id}", "youtube", task_id)
 
         # Fallback: try ytmdl if yt-dlp failed
         if not success:
             update_task(task_id, message="yt-dlp failed, trying ytmdl...")
-            success = try_ytmdl(query, input_type, task_id)
+            success, filename = try_ytmdl(query, input_type, task_id)
 
         if success:
             update_task(task_id, status="generating", message="Generating songs.json...")
             generate_ok = _do_generate()
             if not generate_ok:
-                update_task(task_id, status="done", push_status="failed",
+                update_task(task_id, status="done", push_status="failed", filename=filename,
                             message=f"Downloaded, songs.json generation failed: {query}")
                 return
 
@@ -473,6 +488,7 @@ def _run_download_inner(task_id: str, query: str):
                 task_id,
                 status="done",
                 push_status=push_result["status"],
+                filename=filename,
                 message=f"Downloaded + pushed: {query}" if push_result["ok"]
                         else f"Downloaded, push failed: {push_result['message']}"
             )
@@ -693,6 +709,94 @@ def check_duplicate():
                 break
 
     return jsonify({"duplicates": duplicates})
+
+
+def read_id3_tags(mp3_path: Path) -> dict:
+    """Read ID3 metadata tags from an MP3 file. Returns dict with title, artist, album, cover."""
+    try:
+        from mutagen.mp3 import MP3
+        from mutagen.id3 import ID3
+        import base64
+        
+        audio = MP3(str(mp3_path), ID3=ID3)
+        tags = audio.tags
+        
+        result = {
+            "title": "",
+            "artist": "",
+            "album": "",
+            "cover": None,
+        }
+        
+        if tags:
+            # Read text frames
+            if 'TIT2' in tags:
+                result["title"] = str(tags['TIT2'])
+            if 'TPE1' in tags:
+                result["artist"] = str(tags['TPE1'])
+            if 'TALB' in tags:
+                result["album"] = str(tags['TALB'])
+            
+            # Read cover image (APIC frame)
+            for frame_key in tags.keys():
+                if frame_key.startswith('APIC'):
+                    apic = tags[frame_key]
+                    if hasattr(apic, 'data'):
+                        # Convert binary data to base64 data URL
+                        b64_data = base64.b64encode(apic.data).decode()
+                        mime = getattr(apic, 'mime', 'image/jpeg')
+                        result["cover"] = f"data:{mime};base64,{b64_data}"
+                        break
+        
+        return result
+    except Exception as e:
+        print(f"[read_id3_tags] Failed to read tags from {mp3_path}: {e}")
+        return {"title": "", "artist": "", "album": "", "cover": None}
+
+
+@app.route("/api/download-metadata/<filename>")
+def get_download_metadata(filename):
+    """Get metadata for a downloaded song file."""
+    try:
+        # Sanitize filename to prevent directory traversal
+        if "/" in filename or "\\" in filename or filename.startswith("."):
+            return jsonify({"error": "Invalid filename"}), 400
+        
+        mp3_path = SONGS_DIR / filename
+        if not mp3_path.exists() or not filename.lower().endswith('.mp3'):
+            return jsonify({"error": "File not found"}), 404
+        
+        metadata = read_id3_tags(mp3_path)
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/update-metadata/<filename>", methods=["POST"])
+def update_download_metadata(filename):
+    """Update metadata for a downloaded song file."""
+    try:
+        # Sanitize filename
+        if "/" in filename or "\\" in filename or filename.startswith("."):
+            return jsonify({"error": "Invalid filename"}), 400
+        
+        mp3_path = SONGS_DIR / filename
+        if not mp3_path.exists() or not filename.lower().endswith('.mp3'):
+            return jsonify({"error": "File not found"}), 404
+        
+        data = request.get_json()
+        title = data.get("title", "")
+        artist = data.get("artist", "")
+        album = data.get("album", "")
+        
+        # Update the ID3 tags
+        write_id3_tags(mp3_path, title=title, artist=artist, album=album)
+        
+        # Return updated metadata
+        metadata = read_id3_tags(mp3_path)
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 def get_itunes_metadata(title: str, artist: str = "") -> dict | None:

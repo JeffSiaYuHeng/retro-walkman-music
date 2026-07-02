@@ -259,14 +259,15 @@ body{
 @keyframes fadeUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
 .row-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-top:2px;transition:background-color .2s, color .2s, transform .2s, opacity .2s}
 .row-icon.queued{background:rgba(122,122,122,.08);color:var(--ink-muted-48)}
-.row-icon.downloading{background:rgba(0,102,204,.08);color:var(--primary);animation:spin 2s linear infinite}
-.row-icon.generating{background:rgba(255,149,0,.08);color:var(--orange);animation:pulse 1s ease infinite}
-.row-icon.done{background:rgba(52,199,89,.08);color:var(--green);animation:pop .3s cubic-bezier(.22,1,.36,1)}
-.row-icon.failed{background:rgba(255,59,48,.08);color:var(--red);animation:shake .4s ease}
+.row-icon.downloading{background:rgba(0,102,204,.08);color:var(--primary);animation:simpleRotate 1.5s linear infinite}
+.row-icon.generating{background:rgba(255,149,0,.08);color:var(--orange);animation:simplePulse 1.2s ease infinite}
+.row-icon.done{background:rgba(52,199,89,.08);color:var(--green);animation:simplePop .4s ease}
+.row-icon.failed{background:rgba(255,59,48,.08);color:var(--red)}
+@keyframes simplePulse{0%,100%{opacity:0.6}50%{opacity:1}}
+@keyframes simpleRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes simplePop{0%{transform:scale(0.8)}100%{transform:scale(1)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes pop{0%{transform:scale(.5)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
 .row-body{flex:1;min-width:0}
 .row-title{font-size:17px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -279,15 +280,12 @@ body{
 .progress-bar .fill{height:100%;border-radius:9999px;transition:width .3s ease}
 .progress-bar .fill.indeterminate{
   width:40% !important;
-  background:linear-gradient(90deg, #0070f3, #00c6ff, #0070f3);background-size:200% 100%;
-  animation:indeterminate 1.2s ease infinite, gradientMove 2s linear infinite;
+  background:#0070f3;
+  animation:simpleSlide 1.5s ease infinite;
 }
-.row-loading{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(0, 112, 243, 0.08);border-radius:9999px;color:var(--primary);font-weight:600}
-.row-loading::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px var(--primary);animation:dotPulse 0.8s ease infinite alternate}
-@keyframes dotPulse{0%{transform:scale(.7);opacity:.4;box-shadow:0 0 2px var(--primary)}100%{transform:scale(1.2);opacity:1;box-shadow:0 0 10px var(--primary)}}
-@keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
-@keyframes gradientMove{0%{background-position:100% 0}100%{background-position:-100% 0}}
-.fill.downloading{background:linear-gradient(90deg, #0070f3, #00a2ff, #0070f3);background-size:200% 100%;animation:gradientMove 2s linear infinite;box-shadow:0 0 10px rgba(0, 112, 243, 0.4)}
+.row-loading{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:var(--ink-muted-48)}
+@keyframes simpleSlide{0%{margin-left:-40%}100%{margin-left:100%}}
+.fill.downloading{background:#0070f3}
 .fill.generating{background:var(--orange)}
 .fill.done{background:var(--green)}
 .fill.failed{background:var(--red)}
@@ -486,6 +484,34 @@ body{
 .mini-player-progress{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.1);cursor:pointer}
 .mini-player-progress-fill{height:100%;background:var(--primary);width:0%}
 .mini-player-time{font-size:11px;color:rgba(255,255,255,.4);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:70px;text-align:right}
+
+/* ── Download Metadata ── */
+.download-metadata{margin-top:16px;padding:16px;background:var(--canvas-parchment);border-radius:12px;display:flex;gap:16px;align-items:flex-start}
+.metadata-loading{flex:1;text-align:center;font-size:13px;color:var(--ink-muted-48)}
+.metadata-cover{width:80px;height:80px;border-radius:8px;background:var(--canvas);display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--ink-muted-48);overflow:hidden;flex-shrink:0}
+.metadata-cover img{width:100%;height:100%;object-fit:cover}
+.metadata-cover.placeholder{color:var(--primary);opacity:0.5}
+.metadata-info{flex:1;min-width:0}
+.metadata-field{margin-bottom:8px;font-size:13px}
+.metadata-field label{display:inline-block;font-weight:500;width:60px;color:var(--ink-muted-48)}
+.metadata-field span{color:var(--ink);white-space:normal;word-break:break-word}
+.metadata-error{color:var(--red);font-size:13px}
+.download-metadata .btn-sm{padding:6px 12px;font-size:12px;white-space:nowrap}
+
+/* ── Edit Metadata Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-content{background:var(--canvas);border:1px solid var(--hairline);border-radius:14px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:24px 24px 16px;border-bottom:1px solid var(--hairline);position:sticky;top:0;background:var(--canvas)}
+.modal-header h2{font-size:18px;font-weight:600;margin:0}
+.modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink-muted-48);padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all 0.2s}
+.modal-close:hover{background:var(--canvas-parchment);color:var(--ink)}
+.modal-body{padding:24px}
+.modal-footer{display:flex;gap:12px;justify-content:flex-end;padding:16px 24px;border-top:1px solid var(--hairline);background:var(--canvas-parchment)}
+.form-group{margin-bottom:20px}
+.form-group:last-child{margin-bottom:0}
+.form-group label{display:block;font-size:13px;font-weight:500;margin-bottom:8px;color:var(--ink)}
+.form-group input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--hairline);border-radius:8px;font-size:14px;font-family:inherit;transition:all 0.2s}
+.form-group input[type=text]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(0, 112, 243, 0.1)}
 
 /* ── Responsive ── */
 @media(max-width:900px){

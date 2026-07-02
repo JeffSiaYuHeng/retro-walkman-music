@@ -169,11 +169,15 @@ async function doDownload(song) {
     if (data.error) throw new Error(data.error);
     const items = Array.isArray(data) ? data : [data];
     items.forEach(item => {
-      tasks[item.id] = { id: item.id, song: item.song, input_type: item.input_type, method: '', status: 'queued', message: 'Queued...' };
+      tasks[item.id] = { id: item.id, song: item.song, input_type: item.input_type, method: '', status: 'queued', message: 'Queued...', toastShown: {} };
       pollStatus(item.id);
     });
     renderQueue();
-    if (items.length > 1) showToast(`Queued ${items.length} songs`, 'info');
+    if (items.length > 1) {
+      showToast(`Queued ${items.length} songs`, 'info');
+    } else {
+      showToast(`Starting download: ${items[0].song}`, 'info', 2000);
+    }
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
   } finally {
@@ -188,6 +192,18 @@ async function pollStatus(id) {
       const res = await fetch(`/api/status/${id}`);
       const data = await res.json();
       tasks[id] = { ...tasks[id], ...data };
+      
+      // Show toast for status changes
+      if (!tasks[id].toastShown) tasks[id].toastShown = {};
+      
+      if (data.status === 'downloading' && !tasks[id].toastShown.downloading) {
+        tasks[id].toastShown.downloading = true;
+        showToast(`Downloading: ${data.song}`, 'info', 2000);
+      } else if (data.status === 'generating' && !tasks[id].toastShown.generating) {
+        tasks[id].toastShown.generating = true;
+        showToast(`Processing: ${data.song}`, 'info', 2000);
+      }
+      
       renderQueue();
       if (data.status === 'done' || data.status === 'failed') {
         loadSongs({ silent: true, force: true });
@@ -236,6 +252,14 @@ function renderQueue() {
     const methodBadge = t.method === 'yt-dlp'
       ? '<span class="method-badge fallback">yt-dlp</span>'
       : t.method === 'ytmdl' ? '<span class="method-badge">ytmdl</span>' : '';
+    
+    // For completed downloads, show metadata section if available
+    const isDone = t.status === 'done';
+    const metadataSection = isDone && t.filename ? `
+      <div class="download-metadata" id="metadata-${t.id}">
+        <div class="metadata-loading">Loading metadata...</div>
+      </div>` : '';
+    
     return `
       <div class="row ${rowClass}" id="row-${t.id}">
         <div class="row-icon ${t.status}">${isFinal ? statusIcons[t.status] : typeIcon}</div>
@@ -247,10 +271,19 @@ function renderQueue() {
             <div class="fill ${t.status} ${isBusy ? 'indeterminate' : ''}"
                  style="width:${t.status === 'done' ? '100' : isBusy ? '40' : '0'}%"></div>
           </div>
+          ${metadataSection}
         </div>
         <button class="row-remove" onclick="removeTask('${t.id}')" data-tooltip="Remove" aria-label="Remove download">&times;</button>
       </div>`;
   }).join('');
+  
+  // Load metadata for completed downloads
+  arr.forEach(t => {
+    if (t.status === 'done' && t.filename && !t.metadataLoaded) {
+      t.metadataLoaded = true;
+      loadDownloadMetadata(t.id, t.filename);
+    }
+  });
 }
 
 function removeTask(id) {
@@ -271,6 +304,136 @@ function clearDone() {
     if (el) el.style.animation = 'fadeUp .2s ease forwards';
   });
   setTimeout(() => { toRemove.forEach(id => delete tasks[id]); renderQueue(); }, 200);
+}
+
+// ── Download Metadata ─────────────────────────
+async function loadDownloadMetadata(taskId, filename) {
+  const metadataEl = document.getElementById('metadata-' + taskId);
+  if (!metadataEl) return;
+  
+  try {
+    const res = await fetch(`/api/download-metadata/${encodeURIComponent(filename)}`);
+    if (!res.ok) throw new Error('Failed to load metadata');
+    const meta = await res.json();
+    
+    // Build metadata display
+    let cover = '';
+    if (meta.cover) {
+     cover = `<div class="metadata-cover"><img src="${meta.cover}" alt="Album cover"></div>`;
+    } else {
+     cover = '<div class="metadata-cover placeholder">♪</div>';
+    }
+    
+    metadataEl.innerHTML = `
+     ${cover}
+     <div class="metadata-info">
+       <div class="metadata-field">
+         <label>Title:</label>
+         <span>${esc(meta.title || '(No title)')}</span>
+       </div>
+       <div class="metadata-field">
+         <label>Artist:</label>
+         <span>${esc(meta.artist || '(No artist)')}</span>
+       </div>
+       <div class="metadata-field">
+         <label>Album:</label>
+         <span>${esc(meta.album || '(No album)')}</span>
+       </div>
+     </div>
+     <button class="btn btn-sm btn-ghost" onclick="openEditMetadataModal('${taskId}', '${encodeURIComponent(filename)}')" data-tooltip="Edit metadata">✎ Edit</button>
+    `;
+  } catch (e) {
+    metadataEl.innerHTML = `<div class="metadata-error">Failed to load metadata</div>`;
+  }
+}
+
+function openEditMetadataModal(taskId, filename) {
+  const decodedFilename = decodeURIComponent(filename);
+  const task = Object.values(tasks).find(t => t.id === taskId);
+  
+  // Create modal HTML
+  const modal = document.createElement('div');
+  modal.id = 'editMetadataModal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content">
+     <div class="modal-header">
+       <h2>Edit Metadata</h2>
+       <button class="modal-close" onclick="closeEditMetadataModal()">&times;</button>
+     </div>
+     <div class="modal-body">
+       <div class="form-group">
+         <label for="editTitle">Title:</label>
+         <input type="text" id="editTitle" placeholder="Song title">
+       </div>
+       <div class="form-group">
+         <label for="editArtist">Artist:</label>
+         <input type="text" id="editArtist" placeholder="Artist name">
+       </div>
+       <div class="form-group">
+         <label for="editAlbum">Album:</label>
+         <input type="text" id="editAlbum" placeholder="Album name">
+       </div>
+     </div>
+     <div class="modal-footer">
+       <button class="btn btn-ghost" onclick="closeEditMetadataModal()">Cancel</button>
+       <button class="btn btn-primary" onclick="saveMetadata('${taskId}', '${filename}')">Save</button>
+     </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Load current metadata
+  fetch(`/api/download-metadata/${filename}`)
+    .then(r => r.json())
+    .then(meta => {
+     document.getElementById('editTitle').value = meta.title || '';
+     document.getElementById('editArtist').value = meta.artist || '';
+     document.getElementById('editAlbum').value = meta.album || '';
+     document.getElementById('editTitle').focus();
+    })
+    .catch(() => {});
+  
+  // Close on overlay click
+  modal.addEventListener('click', e => {
+    if (e.target === modal) closeEditMetadataModal();
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEditMetadataModal();
+  }, { once: true });
+}
+
+function closeEditMetadataModal() {
+  const modal = document.getElementById('editMetadataModal');
+  if (modal) modal.remove();
+}
+
+async function saveMetadata(taskId, filename) {
+  const title = document.getElementById('editTitle')?.value || '';
+  const artist = document.getElementById('editArtist')?.value || '';
+  const album = document.getElementById('editAlbum')?.value || '';
+  
+  try {
+    const res = await fetch(`/api/update-metadata/${filename}`, {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ title, artist, album }),
+    });
+    
+    if (!res.ok) throw new Error('Failed to save metadata');
+    
+    closeEditMetadataModal();
+    showToast('Metadata updated successfully', 'success');
+    
+    // Reload metadata display
+    tasks[taskId].metadataLoaded = false;
+    renderQueue();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 async function pushToGitHub() {
