@@ -793,8 +793,15 @@ async function enrichMetadata() {
     
     if (!res.ok) throw new Error('Enrich failed');
     const data = await res.json();
-    if (!data.results) throw new Error('No results returned');
-    _enrichResults = data.results;
+    console.log("Enrich API response:", data);
+    
+    // Check if results exist and handle the object structure
+    const results = data.results || (data.result ? [data.result] : null);
+    if (!results) throw new Error('No results returned');
+    
+    _enrichResults = results;
+    
+    // Render list of results
     
     // Render list of results
     const preview = document.getElementById('enrichPreview');
