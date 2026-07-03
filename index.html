@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Music Downloader — Walkman</title>
+  <title>Pocket Drive — Music Downloader</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
   <div class="global-nav-inner">
     <div class="nav-logo">
       <div class="nav-logo-icon">&#127925;</div>
-      <span class="nav-logo-text">Walkman <span class="nav-logo-badge">PRO</span></span>
+      <span class="nav-logo-text">Pocket Drive <span class="nav-logo-badge">PRO</span></span>
     </div>
     <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle navigation">
       <span></span><span></span><span></span>
@@ -41,7 +41,6 @@
           <div class="input-row">
             <textarea id="songInput" rows="1" placeholder="Song name, YouTube URL, or Spotify URL" autofocus></textarea>
             <button class="btn btn-pill-sm" id="downloadBtn" onclick="startDownload(event)" style="position:relative;overflow:hidden;flex-shrink:0">
-              <span class="btn-spinner" aria-hidden="true"></span>
               <span class="btn-label">Download</span>
             </button>
           </div>
@@ -88,7 +87,6 @@
             </select>
           </div>
           <button class="btn btn-pill-sm" onclick="openUploadModal()" id="uploadBtn" style="flex-shrink:0;position:relative" data-tooltip="Upload album" aria-label="Upload album">
-            <span class="btn-spinner" aria-hidden="true"></span>
             <span class="btn-label">Upload</span>
           </button>
         </div>
@@ -139,7 +137,6 @@
     <div class="edit-actions">
       <button class="btn-modal-cancel" onclick="closeUploadModal()">Cancel</button>
       <button class="btn-edit-save" id="uploadSaveBtn" onclick="submitUpload()">
-        <span class="save-spinner" aria-hidden="true"></span>
         <span class="save-label">Upload</span>
       </button>
     </div>
@@ -186,7 +183,6 @@
     <div class="edit-actions">
       <button class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
       <button class="btn-edit-save" id="editSaveBtn" onclick="submitEdit()">
-        <span class="save-spinner" aria-hidden="true"></span>
         <span class="save-label">Save Changes</span>
       </button>
     </div>
@@ -230,7 +226,7 @@
 
 <!-- Footer -->
 <div class="footer">
-  <p class="footer-text">Walkman Music Downloader. For personal use only.</p>
+  <p class="footer-text">Pocket Drive Music Downloader. For personal use only.</p>
 </div>
 
 <script src="/static/app.js"></script>
