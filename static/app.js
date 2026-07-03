@@ -753,6 +753,11 @@ function openEditModal(idx) {
   document.getElementById('editGenre').value = '';
   document.getElementById('editCoverInput').value = '';
   document.getElementById('editCoverChosen').textContent = 'Choose .jpg file…';
+  
+  // Reset enrich
+  document.getElementById('enrichPreview').style.display = 'none';
+  document.getElementById('enrichBtn').disabled = false;
+  document.getElementById('enrichBtn').textContent = 'Enrich';
 
   ['editTitleErr', 'editArtistErr', 'editYearErr', 'editCoverErr'].forEach(id =>
     document.getElementById(id).classList.remove('show'));
@@ -762,6 +767,70 @@ function openEditModal(idx) {
   document.getElementById('editModalTitle').textContent = `Edit: ${title}`;
   document.getElementById('editModal').classList.add('show');
   _prefillFromCatalog(filename);
+}
+
+let _enrichResults = [];
+
+async function enrichMetadata() {
+  const title = document.getElementById('editTitle').value.trim();
+  const artist = document.getElementById('editArtist').value.trim();
+  const btn = document.getElementById('enrichBtn');
+  
+  if (!title || !artist) {
+    showToast('Title and Artist are required', 'error');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Searching...';
+  
+  try {
+    const res = await fetch('/api/enrich', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: _editOriginalStem + '.mp3' })
+    });
+    
+    if (!res.ok) throw new Error('Enrich failed');
+    const data = await res.json();
+    _enrichResults = data.results;
+    
+    // Render list of results
+    const preview = document.getElementById('enrichPreview');
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">
+        ${_enrichResults.map((r, i) => `
+          <button type="button" onclick="selectEnrichResult(${i})" style="border:none; background:none; padding:0; cursor:pointer;">
+            <img src="${r.thumbnail}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px; border:2px solid transparent;">
+          </button>
+        `).join('')}
+      </div>
+      <p id="enrichStatus" style="font-size:12px; margin-top:8px; color:var(--ink-muted-48);">Click a cover to select it</p>
+    `;
+    
+    btn.style.display = 'none';
+  } catch (e) {
+    showToast('Enrich error: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = 'Enrich';
+  }
+}
+
+function selectEnrichResult(index) {
+  const result = _enrichResults[index];
+  document.getElementById('editTitle').value = result.title;
+  document.getElementById('editArtist').value = result.artist;
+  document.getElementById('editAlbum').value = result.album;
+  
+  // Highlight selected
+  const buttons = document.getElementById('enrichPreview').querySelectorAll('img');
+  buttons.forEach((img, i) => {
+    img.style.borderColor = (i === index) ? 'var(--primary)' : 'transparent';
+  });
+  
+  document.getElementById('enrichStatus').textContent = 'Selected: ' + result.title;
+  showToast('Selected: ' + result.title, 'success');
 }
 
 function _prefillFromCatalog(filename) {

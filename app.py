@@ -1023,46 +1023,23 @@ def enrich_song():
         if not results:
             return jsonify({"error": "No results found"}), 404
 
-        best = results[0]
-        artists = [a.get('name', '') for a in best.get('artists', [])]
-        album = best.get('album', {})
-        album_name = album.get('name', '') if isinstance(album, dict) else ''
-        duration = best.get('duration_seconds', 0)
-        thumbnails = best.get('thumbnails', [])
-        youtube_thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+        # Return list of results for manual selection
+        results_data = []
+        for r in results[:5]:
+            artists = [a.get('name', '') for a in r.get('artists', [])]
+            album = r.get('album', {})
+            album_name = album.get('name', '') if isinstance(album, dict) else ''
+            thumbnails = r.get('thumbnails', [])
+            thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+            results_data.append({
+                "title": r.get('title', ''),
+                "artist": ', '.join(artists),
+                "album": album_name,
+                "thumbnail": thumb,
+                "videoId": r.get('videoId', '')
+            })
 
-        title = best.get('title', '')
-        artist = ', '.join(artists)
-
-        # Fetch external metadata and merge
-        ext_meta = fetch_external_metadata(title, artist)
-        if not album_name:
-            album_name = ext_meta.get("album", "")
-        track = ext_meta.get("track") or 0
-        year = ext_meta.get("year") or ""
-        genre = ext_meta.get("genre") or ""
-        cover_url = ext_meta.get("cover") or youtube_thumb
-
-        if cover_url:
-            download_and_embed_cover(cover_url, filename)
-
-        # Write ID3 metadata tags
-        mp3_path = SONGS_DIR / filename
-        if mp3_path.exists():
-            write_id3_tags(mp3_path, title=title, artist=artist,
-                           album=album_name, track=track, year=year, genre=genre)
-
-        run_generate_json()
-
-        return jsonify({
-            "title": title,
-            "artists": artists,
-            "artist": artist,
-            "album": album_name,
-            "duration": duration,
-            "thumbnail": cover_url,
-            "videoId": best.get('videoId', ''),
-        })
+        return jsonify({"results": results_data})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

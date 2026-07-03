@@ -163,6 +163,13 @@
       <input type="text" id="editAlbum" placeholder="Album name">
     </div>
     <div class="edit-field">
+      <label>Metadata</label>
+      <div id="enrichPreview" style="margin-bottom:10px; display:none;">
+        <img id="enrichImg" src="" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid var(--hairline);">
+      </div>
+      <button class="btn btn-ghost" id="enrichBtn" onclick="enrichMetadata()" style="width:100%;">Enrich</button>
+    </div>
+    <div class="edit-field">
       <label>Year</label>
       <input type="text" id="editYear" placeholder="e.g. 1985" maxlength="4">
       <div class="field-err-msg" id="editYearErr">Year must be a 4-digit number</div>
