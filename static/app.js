@@ -795,11 +795,11 @@ async function enrichMetadata() {
       body: JSON.stringify({ filename: _editOriginalStem + '.mp3', title, artist })
     });
 
-    if (!res.ok) throw new Error('Enrich failed');
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
 
-    const results = data.results || (data.result ? [data.result] : null);
-    if (!results) throw new Error('No results returned');
+    const results = Array.isArray(data.results) ? data.results : [];
+    if (results.length === 0) throw new Error(data.error || 'No results found');
 
     _enrichResults = results;
 

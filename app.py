@@ -1090,7 +1090,9 @@ def enrich_song():
         if not results:
             return jsonify({"error": "No results found"}), 404
 
-        # Return list of results for manual selection, each with a proper cover URL
+        # Return list of results for manual selection.
+        # cover_url is left as the YouTube thumbnail for now; the proper high-res
+        # iTunes cover is fetched only when the user saves via /api/edit.
         results_data = []
         for r in results[:5]:
             artists = [a.get('name', '') for a in r.get('artists', [])]
@@ -1101,16 +1103,12 @@ def enrich_song():
             result_title = r.get('title', '')
             result_artist = ', '.join(artists)
 
-            # Try to get a proper high-quality cover from iTunes
-            itunes = get_itunes_metadata(result_title, result_artist)
-            cover_url = (itunes.get("cover") if itunes else None) or yt_thumb
-
             results_data.append({
                 "title": result_title,
                 "artist": result_artist,
                 "album": album_name,
                 "thumbnail": yt_thumb,
-                "cover_url": cover_url,
+                "cover_url": yt_thumb,
                 "videoId": r.get('videoId', '')
             })
 
