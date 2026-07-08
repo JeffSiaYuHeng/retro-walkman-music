@@ -283,6 +283,10 @@ def try_ytdlp_fallback(query: str, input_type: str, task_id: str) -> tuple[bool,
                     title = ext_meta.get("title") or title
                 if not album:
                     album = ext_meta.get("album") or album
+                # If album still equals the title it's almost certainly a single release
+                # name from iTunes, not the real album — clear it to avoid bad data.
+                if album and album.lower().strip() == title.lower().strip():
+                    album = ''
                 track = ext_meta.get("track") or info.get('track_number') or info.get('playlist_index') or 0
                 year = ext_meta.get("year") or info.get('release_year') or info.get('upload_date', '')[:4] or ''
                 genre = ext_meta.get("genre") or info.get('genre') or ''
@@ -801,10 +805,11 @@ def update_download_metadata(filename):
 
 def _itunes_match_score(result: dict, title: str, artist: str) -> int:
     """Score an iTunes result against expected title/artist. Higher = better match."""
-    track_name = result.get("trackName", "").lower()
-    artist_name = result.get("artistName", "").lower()
-    title_lower = title.lower()
-    artist_lower = artist.lower()
+    track_name = result.get("trackName", "").lower().strip()
+    artist_name = result.get("artistName", "").lower().strip()
+    collection_name = result.get("collectionName", "").lower().strip()
+    title_lower = title.lower().strip()
+    artist_lower = artist.lower().strip()
 
     score = 0
     # Title similarity
@@ -819,6 +824,11 @@ def _itunes_match_score(result: dict, title: str, artist: str) -> int:
             score += 3
         elif artist_lower in artist_name or artist_name in artist_lower:
             score += 1
+
+    # Prefer results where album name differs from track name — same name usually
+    # means it's a single release, not the original album.
+    if collection_name and collection_name != track_name:
+        score += 2
 
     # Has artwork
     if result.get("artworkUrl100"):
