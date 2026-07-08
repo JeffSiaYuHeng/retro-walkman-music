@@ -757,7 +757,9 @@ function openEditModal(idx) {
   // Reset enrich
   document.getElementById('enrichPreview').style.display = 'none';
   document.getElementById('enrichBtn').disabled = false;
+  document.getElementById('enrichBtn').style.display = '';
   document.getElementById('enrichBtn').textContent = 'Enrich';
+  _selectedEnrichCoverUrl = '';
 
   ['editTitleErr', 'editArtistErr', 'editYearErr', 'editCoverErr'].forEach(id =>
     document.getElementById(id).classList.remove('show'));
@@ -770,53 +772,54 @@ function openEditModal(idx) {
 }
 
 let _enrichResults = [];
+let _selectedEnrichCoverUrl = '';
 
 async function enrichMetadata() {
   const title = document.getElementById('editTitle').value.trim();
   const artist = document.getElementById('editArtist').value.trim();
   const btn = document.getElementById('enrichBtn');
-  
+
   if (!title || !artist) {
     showToast('Title and Artist are required', 'error');
     return;
   }
-  
+
   btn.disabled = true;
   btn.textContent = 'Searching...';
-  
+  _selectedEnrichCoverUrl = '';
+
   try {
     const res = await fetch('/api/enrich', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: _editOriginalStem + '.mp3' })
+      body: JSON.stringify({ filename: _editOriginalStem + '.mp3', title, artist })
     });
-    
+
     if (!res.ok) throw new Error('Enrich failed');
     const data = await res.json();
-    console.log("Enrich API response:", data);
-    
-    // Check if results exist and handle the object structure
+
     const results = data.results || (data.result ? [data.result] : null);
     if (!results) throw new Error('No results returned');
-    
+
     _enrichResults = results;
-    
-    // Render list of results
-    
-    // Render list of results
+
     const preview = document.getElementById('enrichPreview');
     preview.style.display = 'block';
     preview.innerHTML = `
-      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">
+      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px;">
         ${_enrichResults.map((r, i) => `
-          <button type="button" onclick="selectEnrichResult(${i})" style="border:none; background:none; padding:0; cursor:pointer;">
-            <img src="${r.thumbnail}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px; border:2px solid transparent;">
+          <button type="button" onclick="selectEnrichResult(${i})" style="border:2px solid transparent; background:var(--surface-2,#f5f5f5); padding:4px; border-radius:6px; cursor:pointer; text-align:left; transition:border-color .15s;" id="enrichCard${i}">
+            <img src="${r.thumbnail}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:4px; display:block;">
+            <div style="font-size:10px; margin-top:4px; line-height:1.3; overflow:hidden;">
+              <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.title}">${r.title}</div>
+              <div style="color:var(--ink-muted-48); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.artist}">${r.artist}</div>
+            </div>
           </button>
         `).join('')}
       </div>
-      <p id="enrichStatus" style="font-size:12px; margin-top:8px; color:var(--ink-muted-48);">Click a cover to select it</p>
+      <p id="enrichStatus" style="font-size:12px; margin-top:8px; color:var(--ink-muted-48);">Click a result to apply</p>
     `;
-    
+
     btn.style.display = 'none';
   } catch (e) {
     showToast('Enrich error: ' + e.message, 'error');
@@ -830,14 +833,17 @@ function selectEnrichResult(index) {
   document.getElementById('editTitle').value = result.title;
   document.getElementById('editArtist').value = result.artist;
   document.getElementById('editAlbum').value = result.album;
-  
-  // Highlight selected
-  const buttons = document.getElementById('enrichPreview').querySelectorAll('img');
-  buttons.forEach((img, i) => {
-    img.style.borderColor = (i === index) ? 'var(--primary)' : 'transparent';
+
+  // Store cover URL to be applied on save (prefer iTunes cover, fall back to thumbnail)
+  _selectedEnrichCoverUrl = result.cover_url || result.thumbnail || '';
+
+  // Highlight selected card
+  _enrichResults.forEach((_, i) => {
+    const card = document.getElementById(`enrichCard${i}`);
+    if (card) card.style.borderColor = (i === index) ? 'var(--primary)' : 'transparent';
   });
-  
-  document.getElementById('enrichStatus').textContent = 'Selected: ' + result.title;
+
+  document.getElementById('enrichStatus').textContent = `Selected: ${result.title} — ${result.artist}`;
   showToast('Selected: ' + result.title, 'success');
 }
 
@@ -933,7 +939,11 @@ async function submitEdit() {
   formData.append('album', document.getElementById('editAlbum').value.trim());
   formData.append('year', year);
   formData.append('genre', document.getElementById('editGenre').value.trim());
-  if (coverInput.files.length) formData.append('jpg', coverInput.files[0]);
+  if (coverInput.files.length) {
+    formData.append('jpg', coverInput.files[0]);
+  } else if (_selectedEnrichCoverUrl) {
+    formData.append('cover_url', _selectedEnrichCoverUrl);
+  }
 
   saveBtn.disabled = true;
   saveBtn.classList.add('loading');

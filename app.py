@@ -799,6 +799,34 @@ def update_download_metadata(filename):
         return jsonify({"error": str(e)}), 500
 
 
+def _itunes_match_score(result: dict, title: str, artist: str) -> int:
+    """Score an iTunes result against expected title/artist. Higher = better match."""
+    track_name = result.get("trackName", "").lower()
+    artist_name = result.get("artistName", "").lower()
+    title_lower = title.lower()
+    artist_lower = artist.lower()
+
+    score = 0
+    # Title similarity
+    if title_lower == track_name:
+        score += 4
+    elif title_lower in track_name or track_name in title_lower:
+        score += 2
+
+    # Artist similarity (only when we have one)
+    if artist_lower:
+        if artist_lower == artist_name:
+            score += 3
+        elif artist_lower in artist_name or artist_name in artist_lower:
+            score += 1
+
+    # Has artwork
+    if result.get("artworkUrl100"):
+        score += 1
+
+    return score
+
+
 def get_itunes_metadata(title: str, artist: str = "") -> dict | None:
     """Search iTunes for album cover + metadata. Returns dict or None."""
     try:
@@ -821,22 +849,28 @@ def get_itunes_metadata(title: str, artist: str = "") -> dict | None:
         if not results:
             return None
 
-        for r in results:
-            art_url = r.get("artworkUrl100", "")
-            if art_url:
-                release_date = r.get("releaseDate", "")
-                year = release_date[:4] if release_date else ""
-                return {
-                    "cover": art_url.replace("100x100", "600x600"),
-                    "title": r.get("trackName", ""),
-                    "artist": r.get("artistName", ""),
-                    "album": r.get("collectionName", ""),
-                    "track": r.get("trackNumber", 0),
-                    "year": year,
-                    "genre": r.get("primaryGenreName", ""),
-                }
+        # Pick best-matching result that has artwork; require score > 0 to avoid
+        # completely unrelated matches.
+        candidates = [r for r in results if r.get("artworkUrl100")]
+        if not candidates:
+            return None
 
-        return None
+        best = max(candidates, key=lambda r: _itunes_match_score(r, title, artist))
+        if _itunes_match_score(best, title, artist) == 0:
+            return None
+
+        release_date = best.get("releaseDate", "")
+        year = release_date[:4] if release_date else ""
+        art_url = best.get("artworkUrl100", "")
+        return {
+            "cover": art_url.replace("100x100", "600x600"),
+            "title": best.get("trackName", ""),
+            "artist": best.get("artistName", ""),
+            "album": best.get("collectionName", ""),
+            "track": best.get("trackNumber", 0),
+            "year": year,
+            "genre": best.get("primaryGenreName", ""),
+        }
     except Exception as e:
         print(f"[iTunes] Error: {e}")
         return None
@@ -849,30 +883,55 @@ def get_deezer_metadata(title: str, artist: str = "") -> dict | None:
         import urllib.parse
 
         query = f"{artist} {title}".strip() if artist else title
-        params = urllib.parse.urlencode({"q": query, "limit": 3})
+        params = urllib.parse.urlencode({"q": query, "limit": 5})
         url = f"https://api.deezer.com/search?{params}"
 
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read().decode("utf-8"))
 
+        title_lower = title.lower()
+        artist_lower = artist.lower()
+        best = None
+        best_score = -1
+
         for item in data.get("data", []):
             album = item.get("album", {})
             cover = album.get("cover_xl") or album.get("cover_big") or album.get("cover", "")
-            if cover:
-                release_date = item.get("release_date", "")
-                year = release_date[:4] if release_date else ""
-                return {
-                    "cover": cover,
-                    "title": item.get("title", ""),
-                    "artist": item.get("artist", {}).get("name", ""),
-                    "album": album.get("title", ""),
-                    "track": item.get("track_position", 0),
-                    "year": year,
-                    "genre": "",
-                }
+            if not cover:
+                continue
+            # Score this result
+            t = item.get("title", "").lower()
+            a = item.get("artist", {}).get("name", "").lower()
+            score = 0
+            if title_lower == t:
+                score += 4
+            elif title_lower in t or t in title_lower:
+                score += 2
+            if artist_lower:
+                if artist_lower == a:
+                    score += 3
+                elif artist_lower in a or a in artist_lower:
+                    score += 1
+            if score > best_score:
+                best_score = score
+                best = (item, album, cover)
 
-        return None
+        if best is None or best_score < 0:
+            return None
+
+        item, album, cover = best
+        release_date = item.get("release_date", "")
+        year = release_date[:4] if release_date else ""
+        return {
+            "cover": cover,
+            "title": item.get("title", ""),
+            "artist": item.get("artist", {}).get("name", ""),
+            "album": album.get("title", ""),
+            "track": item.get("track_position", 0),
+            "year": year,
+            "genre": "",
+        }
     except Exception as e:
         print(f"[Deezer] Error: {e}")
         return None
@@ -1008,12 +1067,20 @@ def enrich_song():
     """Fetch artist/album info for a song using ytmusicapi + external APIs."""
     data = request.get_json()
     filename = data.get("filename", "").strip()
+    form_title = data.get("title", "").strip()
+    form_artist = data.get("artist", "").strip()
+
     if not filename:
         return jsonify({"error": "filename is required"}), 400
 
-    name = filename.replace('.mp3', '')
-    parts = name.split(' - ', 1)
-    query = parts[1].strip() if len(parts) > 1 else name.strip()
+    # Use the form's current title/artist if provided; fall back to filename extraction
+    if form_title:
+        query = f"{form_artist} {form_title}".strip() if form_artist else form_title
+    else:
+        name = filename.replace('.mp3', '')
+        parts = name.split(' - ', 1)
+        query = parts[1].strip() if len(parts) > 1 else name.strip()
+        query = clean_youtube_title(query)
 
     try:
         from ytmusicapi import YTMusic
@@ -1023,19 +1090,27 @@ def enrich_song():
         if not results:
             return jsonify({"error": "No results found"}), 404
 
-        # Return list of results for manual selection
+        # Return list of results for manual selection, each with a proper cover URL
         results_data = []
         for r in results[:5]:
             artists = [a.get('name', '') for a in r.get('artists', [])]
             album = r.get('album', {})
             album_name = album.get('name', '') if isinstance(album, dict) else ''
             thumbnails = r.get('thumbnails', [])
-            thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+            yt_thumb = thumbnails[-1].get('url', '') if thumbnails else ''
+            result_title = r.get('title', '')
+            result_artist = ', '.join(artists)
+
+            # Try to get a proper high-quality cover from iTunes
+            itunes = get_itunes_metadata(result_title, result_artist)
+            cover_url = (itunes.get("cover") if itunes else None) or yt_thumb
+
             results_data.append({
-                "title": r.get('title', ''),
-                "artist": ', '.join(artists),
+                "title": result_title,
+                "artist": result_artist,
                 "album": album_name,
-                "thumbnail": thumb,
+                "thumbnail": yt_thumb,
+                "cover_url": cover_url,
                 "videoId": r.get('videoId', '')
             })
 
@@ -1070,16 +1145,30 @@ def enrich_all():
 
         # Clean YouTube noise from query for better search results
         query = clean_youtube_title(query)
+        query_is_chinese = contains_chinese(query)
 
         try:
-            search_results = ytm.search(query, filter="songs", limit=3)
+            search_results = ytm.search(query, filter="songs", limit=5)
             if not search_results:
                 continue
 
+            # Prefer a result whose title is Chinese when the original query is Chinese
             best = search_results[0]
+            if query_is_chinese:
+                for r in search_results:
+                    if contains_chinese(r.get('title', '')):
+                        best = r
+                        break
+
             artists = [a.get('name', '') for a in best.get('artists', [])]
             new_artist = ', '.join(artists) if artists else artist
-            new_title = best.get('title', '') or query
+            lookup_title = best.get('title', '') or query
+            # Preserve Chinese title: only take ytmusicapi result if it's also Chinese,
+            # or if the original query wasn't Chinese.
+            if query_is_chinese and not contains_chinese(lookup_title):
+                new_title = query
+            else:
+                new_title = lookup_title
             album = best.get('album', {})
             album_name = album.get('name', '') if isinstance(album, dict) else ''
             thumbnails = best.get('thumbnails', [])
@@ -1313,11 +1402,12 @@ def upload_song():
 def edit_song():
     """Edit ID3 metadata for a song; optionally rename the file pair and replace cover."""
     original_stem = request.form.get("original_stem", "").strip()
-    title   = request.form.get("title",  "").strip()
-    artist  = request.form.get("artist", "").strip()
-    album   = request.form.get("album",  "").strip()
-    year    = request.form.get("year",   "").strip()
-    genre   = request.form.get("genre",  "").strip()
+    title     = request.form.get("title",     "").strip()
+    artist    = request.form.get("artist",    "").strip()
+    album     = request.form.get("album",     "").strip()
+    year      = request.form.get("year",      "").strip()
+    genre     = request.form.get("genre",     "").strip()
+    cover_url = request.form.get("cover_url", "").strip()
     new_cover = request.files.get("jpg")
 
     # ── Validate required fields ──────────────────────────────────────────
@@ -1379,6 +1469,10 @@ def edit_song():
             if old_jpg.exists():
                 old_jpg.rename(new_jpg)
                 _embed_single(new_jpg, new_mp3, "image/jpeg", force=True)
+
+        # ── Download cover from URL if no file upload provided ────────────
+        if cover_url and new_cover_data is None:
+            download_and_embed_cover(cover_url, f"{new_stem}.mp3")
 
     except OSError as e:
         return jsonify({"error": f"Filesystem error: {e}"}), 500
